@@ -1,0 +1,12 @@
+{
+    "_id":"",
+    "name":"Hydraulic Pump",
+    "equipmentId":"EQ-001",
+    "location":"Plant A",
+    "manufacturer":"Caterpillar",
+    "model":"CAT X12",
+    "installationDate":"2024-05-11",
+    "status":"Running",
+    "createdAt":"",
+    "updatedAt":""
+}

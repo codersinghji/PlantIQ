@@ -1,0 +1,1661 @@
+/* =========================================================
+   SYSTEM ACCESS PAGE
+========================================================= */
+
+.system-access-page {
+    padding: 28px;
+    min-height: 100%;
+    background: #f6f8fb;
+    color: #172033;
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.system-access-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 28px;
+}
+
+.system-access-eyebrow {
+    color: #2563eb;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1.4px;
+    margin-bottom: 7px;
+}
+
+.system-access-header h1 {
+    margin: 0;
+    font-size: 30px;
+    font-weight: 750;
+    letter-spacing: -0.5px;
+}
+
+.system-access-header p {
+    margin: 7px 0 0;
+    color: #697386;
+    font-size: 14px;
+}
+
+
+/* =========================================================
+   HEADER USER INFO
+========================================================= */
+
+.system-access-header-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    min-width: 210px;
+
+    padding: 12px 16px;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e9f0;
+
+    border-radius: 12px;
+
+    box-shadow:
+        0 2px 8px rgba(15, 23, 42, 0.03);
+
+    box-sizing: border-box;
+}
+
+.access-icon {
+    width: 40px;
+    height: 40px;
+
+    flex-shrink: 0;
+
+    border-radius: 10px;
+
+    background: #eff6ff;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 19px;
+}
+
+.system-access-header-info strong {
+    display: block;
+
+    color: #172033;
+
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.system-access-header-info span {
+    display: block;
+
+    margin-top: 3px;
+
+    color: #7a8496;
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   ALERTS
+========================================================= */
+
+.system-alert {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 12px 15px;
+
+    margin-bottom: 18px;
+
+    border-radius: 10px;
+
+    font-size: 13px;
+
+    animation: alertSlideIn 0.2s ease;
+}
+
+.system-alert button {
+    margin-left: auto;
+
+    width: 28px;
+    height: 28px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: none;
+
+    background: transparent;
+
+    color: currentColor;
+
+    font-size: 20px;
+
+    cursor: pointer;
+
+    border-radius: 6px;
+}
+
+.system-alert button:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.system-alert-error {
+    background: #fff1f2;
+
+    color: #be123c;
+
+    border: 1px solid #fecdd3;
+}
+
+.system-alert-success {
+    background: #ecfdf5;
+
+    color: #047857;
+
+    border: 1px solid #a7f3d0;
+}
+
+@keyframes alertSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* =========================================================
+   STATISTICS
+========================================================= */
+
+.system-stats {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 16px;
+
+    margin-bottom: 24px;
+}
+
+.system-stat-card {
+    display: flex;
+    align-items: center;
+
+    gap: 14px;
+
+    padding: 18px;
+
+    background: #ffffff;
+
+    border: 1px solid #e6eaf0;
+
+    border-radius: 12px;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.system-stat-card:hover {
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 8px 20px rgba(15, 23, 42, 0.06);
+}
+
+.stat-icon {
+    width: 42px;
+    height: 42px;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 10px;
+
+    font-size: 18px;
+}
+
+.stat-icon.blue {
+    background: #eff6ff;
+}
+
+.stat-icon.purple {
+    background: #f5f3ff;
+}
+
+.stat-icon.green {
+    background: #ecfdf5;
+}
+
+.stat-icon.orange {
+    background: #fff7ed;
+}
+
+.system-stat-card span {
+    display: block;
+
+    color: #7a8496;
+
+    font-size: 12px;
+}
+
+.system-stat-card strong {
+    display: block;
+
+    margin-top: 3px;
+
+    color: #172033;
+
+    font-size: 23px;
+    font-weight: 750;
+}
+
+
+/* =========================================================
+   USERS PANEL
+========================================================= */
+
+.system-users-panel {
+    background: #ffffff;
+
+    border: 1px solid #e5e9f0;
+
+    border-radius: 14px;
+
+    overflow: hidden;
+
+    box-shadow:
+        0 2px 8px rgba(15, 23, 42, 0.02);
+}
+
+
+/* =========================================================
+   USERS TOOLBAR
+========================================================= */
+
+.system-users-toolbar {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 20px;
+
+    padding: 20px 22px;
+
+    border-bottom: 1px solid #edf0f4;
+}
+
+.system-users-toolbar h2 {
+    margin: 0;
+
+    color: #172033;
+
+    font-size: 17px;
+    font-weight: 700;
+}
+
+.system-users-toolbar p {
+    margin: 5px 0 0;
+
+    color: #7a8496;
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   TOOLBAR ACTIONS
+========================================================= */
+
+.system-toolbar-actions {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: flex-end;
+
+    gap: 10px;
+
+    flex-shrink: 0;
+}
+
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+.system-search {
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    width: 260px;
+
+    min-height: 38px;
+
+    padding: 0 12px;
+
+    background: #fafbfc;
+
+    border: 1px solid #dfe4eb;
+
+    border-radius: 9px;
+
+    box-sizing: border-box;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+.system-search:focus-within {
+    background: #ffffff;
+
+    border-color: #2563eb;
+
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+
+.system-search span {
+    color: #94a3b8;
+
+    font-size: 14px;
+
+    flex-shrink: 0;
+}
+
+.system-search input {
+    width: 100%;
+
+    height: 100%;
+
+    min-width: 0;
+
+    border: none;
+
+    outline: none;
+
+    background: transparent;
+
+    color: #172033;
+
+    font-size: 13px;
+}
+
+.system-search input::placeholder {
+    color: #9aa3b2;
+}
+
+
+/* =========================================================
+   ADD USER BUTTON
+========================================================= */
+
+.add-user-button {
+    min-height: 38px;
+
+    padding: 0 15px;
+
+    border: 1px solid #2563eb;
+
+    border-radius: 9px;
+
+    background: #2563eb;
+
+    color: #ffffff;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    white-space: nowrap;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 3px 8px rgba(37, 99, 235, 0.18);
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.15s ease,
+        box-shadow 0.2s ease;
+}
+
+.add-user-button:hover {
+    background: #1d4ed8;
+
+    border-color: #1d4ed8;
+
+    transform: translateY(-1px);
+
+    box-shadow:
+        0 5px 12px rgba(37, 99, 235, 0.24);
+}
+
+.add-user-button:active {
+    transform: translateY(0);
+
+    box-shadow:
+        0 2px 5px rgba(37, 99, 235, 0.18);
+}
+
+.add-user-button:disabled {
+    opacity: 0.6;
+
+    cursor: not-allowed;
+
+    transform: none;
+}
+
+
+/* =========================================================
+   ADD USER MODAL
+========================================================= */
+
+.add-user-overlay {
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 9999;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 20px;
+
+    background:
+        rgba(15, 23, 42, 0.52);
+
+    backdrop-filter: blur(3px);
+
+    animation: modalFadeIn 0.18s ease;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+
+/* =========================================================
+   ADD USER MODAL CARD
+========================================================= */
+
+.add-user-modal {
+    width: 100%;
+
+    max-width: 500px;
+
+    max-height: calc(100vh - 40px);
+
+    overflow-y: auto;
+
+    background: #ffffff;
+
+    border-radius: 16px;
+
+    border: 1px solid #e5e9f0;
+
+    box-shadow:
+        0 25px 70px rgba(15, 23, 42, 0.22);
+
+    animation: modalSlideUp 0.2s ease;
+}
+
+@keyframes modalSlideUp {
+    from {
+        opacity: 0;
+
+        transform:
+            translateY(12px)
+            scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+
+        transform:
+            translateY(0)
+            scale(1);
+    }
+}
+
+
+/* =========================================================
+   MODAL HEADER
+========================================================= */
+
+.add-user-modal-header {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 15px;
+
+    padding: 20px 22px;
+
+    border-bottom: 1px solid #edf0f4;
+}
+
+.add-user-modal-title {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+}
+
+.add-user-modal-icon {
+    width: 40px;
+    height: 40px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    border-radius: 10px;
+
+    background: #eff6ff;
+
+    color: #2563eb;
+
+    font-size: 18px;
+}
+
+.add-user-modal-header h3 {
+    margin: 0;
+
+    color: #172033;
+
+    font-size: 17px;
+
+    font-weight: 750;
+}
+
+.add-user-modal-header p {
+    margin: 4px 0 0;
+
+    color: #7a8496;
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   MODAL CLOSE BUTTON
+========================================================= */
+
+.add-user-close {
+    width: 34px;
+    height: 34px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    border: none;
+
+    border-radius: 8px;
+
+    background: transparent;
+
+    color: #64748b;
+
+    font-size: 22px;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease;
+}
+
+.add-user-close:hover {
+    background: #f1f5f9;
+
+    color: #172033;
+}
+
+
+/* =========================================================
+   ADD USER FORM
+========================================================= */
+
+.add-user-form {
+    padding: 22px;
+}
+
+.add-user-form-group {
+    margin-bottom: 17px;
+}
+
+.add-user-form-group:last-child {
+    margin-bottom: 0;
+}
+
+.add-user-form-label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: #344054;
+
+    font-size: 12px;
+
+    font-weight: 700;
+}
+
+.add-user-form-label span {
+    color: #dc2626;
+}
+
+
+/* =========================================================
+   FORM INPUTS
+========================================================= */
+
+.add-user-form input,
+.add-user-form select {
+    width: 100%;
+
+    height: 42px;
+
+    padding: 0 12px;
+
+    box-sizing: border-box;
+
+    border: 1px solid #dfe4eb;
+
+    border-radius: 9px;
+
+    outline: none;
+
+    background: #fafbfc;
+
+    color: #172033;
+
+    font-family: inherit;
+
+    font-size: 13px;
+
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.add-user-form input:hover,
+.add-user-form select:hover {
+    background: #ffffff;
+
+    border-color: #cbd5e1;
+}
+
+.add-user-form input:focus,
+.add-user-form select:focus {
+    background: #ffffff;
+
+    border-color: #2563eb;
+
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+
+.add-user-form input::placeholder {
+    color: #9aa3b2;
+}
+
+.add-user-form select {
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   PASSWORD HELP
+========================================================= */
+
+.add-user-password-help {
+    display: block;
+
+    margin-top: 6px;
+
+    color: #8a94a6;
+
+    font-size: 11px;
+
+    line-height: 1.4;
+}
+
+
+/* =========================================================
+   MODAL BUTTONS
+========================================================= */
+
+.add-user-form-actions {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: flex-end;
+
+    gap: 10px;
+
+    margin-top: 22px;
+
+    padding-top: 18px;
+
+    border-top: 1px solid #edf0f4;
+}
+
+.cancel-user-button,
+.create-user-button {
+    min-height: 40px;
+
+    padding: 0 16px;
+
+    border-radius: 8px;
+
+    font-family: inherit;
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.15s ease;
+}
+
+.cancel-user-button {
+    border: 1px solid #dfe4eb;
+
+    background: #ffffff;
+
+    color: #475569;
+}
+
+.cancel-user-button:hover:not(:disabled) {
+    background: #f8fafc;
+
+    border-color: #cbd5e1;
+}
+
+.create-user-button {
+    border: 1px solid #2563eb;
+
+    background: #2563eb;
+
+    color: #ffffff;
+
+    box-shadow:
+        0 3px 8px rgba(37, 99, 235, 0.16);
+}
+
+.create-user-button:hover:not(:disabled) {
+    background: #1d4ed8;
+
+    border-color: #1d4ed8;
+
+    transform: translateY(-1px);
+}
+
+.cancel-user-button:disabled,
+.create-user-button:disabled {
+    opacity: 0.55;
+
+    cursor: not-allowed;
+
+    transform: none;
+}
+
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.system-table-wrapper {
+    width: 100%;
+
+    overflow-x: auto;
+}
+
+.system-users-table {
+    width: 100%;
+
+    min-width: 850px;
+
+    border-collapse: collapse;
+}
+
+.system-users-table th {
+    padding: 12px 20px;
+
+    text-align: left;
+
+    background: #fafbfc;
+
+    color: #7b8495;
+
+    font-size: 10px;
+
+    letter-spacing: 0.7px;
+
+    font-weight: 700;
+
+    white-space: nowrap;
+}
+
+.system-users-table td {
+    padding: 15px 20px;
+
+    border-top: 1px solid #edf0f4;
+
+    color: #172033;
+
+    font-size: 13px;
+}
+
+.system-users-table tbody tr {
+    transition:
+        background 0.15s ease;
+}
+
+.system-users-table tbody tr:hover {
+    background: #fafcff;
+}
+
+
+/* =========================================================
+   USER
+========================================================= */
+
+.user-cell {
+    display: flex;
+
+    align-items: center;
+
+    gap: 11px;
+}
+
+.user-avatar {
+    width: 37px;
+    height: 37px;
+
+    flex-shrink: 0;
+
+    border-radius: 50%;
+
+    background:
+        linear-gradient(
+            135deg,
+            #2563eb,
+            #4f46e5
+        );
+
+    color: #ffffff;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    font-weight: 700;
+
+    box-shadow:
+        0 3px 8px rgba(37, 99, 235, 0.18);
+}
+
+.user-cell strong {
+    display: block;
+
+    color: #172033;
+
+    font-size: 13px;
+}
+
+.user-cell small {
+    display: inline-block;
+
+    margin-top: 3px;
+
+    color: #2563eb;
+
+    font-size: 10px;
+
+    font-weight: 600;
+}
+
+.user-email {
+    color: #657083;
+
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   ROLES
+========================================================= */
+
+.role-select,
+.role-badge {
+    border-radius: 7px;
+
+    font-size: 11px;
+
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   ROLE DROPDOWN
+========================================================= */
+
+.role-select {
+    min-width: 105px;
+
+    padding: 6px 28px 6px 9px;
+
+    border: 1px solid currentColor;
+
+    outline: none;
+
+    cursor: pointer;
+
+    appearance: auto;
+
+    transition:
+        opacity 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.role-select:hover:not(:disabled) {
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, 0.06);
+}
+
+.role-select:focus {
+    box-shadow:
+        0 0 0 3px rgba(37, 99, 235, 0.10);
+}
+
+.role-select:disabled {
+    cursor: not-allowed;
+
+    opacity: 0.55;
+}
+
+
+/* =========================================================
+   ROLE BADGE
+========================================================= */
+
+.role-badge {
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 6px 9px;
+
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   ADMIN
+========================================================= */
+
+.role-admin {
+    color: #7c3aed;
+
+    background: #f5f3ff;
+}
+
+
+/* =========================================================
+   ENGINEER
+========================================================= */
+
+.role-engineer {
+    color: #2563eb;
+
+    background: #eff6ff;
+}
+
+
+/* =========================================================
+   TECHNICIAN
+========================================================= */
+
+.role-technician {
+    color: #d97706;
+
+    background: #fffbeb;
+}
+
+
+/* =========================================================
+   VIEWER
+========================================================= */
+
+.role-viewer {
+    color: #475569;
+
+    background: #f1f5f9;
+}
+
+
+/* =========================================================
+   OPERATOR
+========================================================= */
+
+.role-operator {
+    color: #059669;
+
+    background: #ecfdf5;
+}
+
+
+/* =========================================================
+   DEFAULT
+========================================================= */
+
+.role-default {
+    color: #475569;
+
+    background: #f1f5f9;
+}
+
+
+/* =========================================================
+   ROLE SELECT COLORS
+========================================================= */
+
+.role-select.role-admin {
+    background: #f5f3ff;
+}
+
+.role-select.role-engineer {
+    background: #eff6ff;
+}
+
+.role-select.role-technician {
+    background: #fffbeb;
+}
+
+.role-select.role-viewer {
+    background: #f1f5f9;
+}
+
+.role-select.role-operator {
+    background: #ecfdf5;
+}
+
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+.status-badge {
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    color: #047857;
+
+    background: #ecfdf5;
+
+    padding: 6px 9px;
+
+    border-radius: 7px;
+
+    font-size: 11px;
+
+    font-weight: 600;
+
+    white-space: nowrap;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+
+    border-radius: 50%;
+
+    background: #10b981;
+
+    box-shadow:
+        0 0 0 3px rgba(16, 185, 129, 0.12);
+}
+
+
+/* =========================================================
+   ACTIONS
+========================================================= */
+
+.user-actions {
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+}
+
+
+/* =========================================================
+   DELETE BUTTON
+========================================================= */
+
+.delete-user-button {
+    min-width: 65px;
+
+    padding: 7px 11px;
+
+    border: 1px solid #fecaca;
+
+    border-radius: 7px;
+
+    background: #fff1f2;
+
+    color: #dc2626;
+
+    font-size: 11px;
+
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.15s ease;
+}
+
+.delete-user-button:hover:not(:disabled) {
+    background: #fee2e2;
+
+    border-color: #fca5a5;
+
+    transform: translateY(-1px);
+}
+
+.delete-user-button:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.delete-user-button:disabled {
+    opacity: 0.5;
+
+    cursor: not-allowed;
+}
+
+
+/* =========================================================
+   CURRENT USER
+========================================================= */
+
+.current-user-label {
+    display: inline-flex;
+
+    align-items: center;
+
+    padding: 6px 9px;
+
+    color: #64748b;
+
+    background: #f8fafc;
+
+    border: 1px solid #e2e8f0;
+
+    border-radius: 7px;
+
+    font-size: 11px;
+}
+
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.system-loading {
+    padding: 60px;
+
+    text-align: center;
+
+    color: #7a8496;
+}
+
+.loading-spinner {
+    width: 28px;
+    height: 28px;
+
+    margin: 0 auto 12px;
+
+    border: 3px solid #e5e7eb;
+
+    border-top-color: #2563eb;
+
+    border-radius: 50%;
+
+    animation:
+        systemSpin 0.7s linear infinite;
+}
+
+.system-loading p {
+    margin: 0;
+
+    font-size: 13px;
+}
+
+@keyframes systemSpin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+/* =========================================================
+   EMPTY
+========================================================= */
+
+.system-empty {
+    padding: 60px;
+
+    text-align: center;
+}
+
+.system-empty > div {
+    font-size: 32px;
+
+    opacity: 0.8;
+}
+
+.system-empty h3 {
+    margin: 10px 0 5px;
+
+    color: #172033;
+
+    font-size: 16px;
+}
+
+.system-empty p {
+    margin: 0;
+
+    color: #7a8496;
+
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   ROLE INFORMATION
+========================================================= */
+
+.roles-information {
+    margin-top: 24px;
+
+    padding: 20px;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e9f0;
+
+    border-radius: 14px;
+
+    box-shadow:
+        0 2px 8px rgba(15, 23, 42, 0.02);
+}
+
+.roles-information-header {
+    display: flex;
+
+    align-items: center;
+
+    gap: 12px;
+
+    margin-bottom: 18px;
+}
+
+.roles-info-icon {
+    width: 35px;
+    height: 35px;
+
+    flex-shrink: 0;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    background: #eff6ff;
+
+    border-radius: 9px;
+}
+
+.roles-information-header h3 {
+    margin: 0;
+
+    color: #172033;
+
+    font-size: 15px;
+}
+
+.roles-information-header p {
+    margin: 4px 0 0;
+
+    color: #7a8496;
+
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   ROLE PERMISSION CARDS
+========================================================= */
+
+.role-permission-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(5, minmax(0, 1fr));
+
+    gap: 12px;
+}
+
+.permission-item {
+    padding: 14px;
+
+    background: #fafbfc;
+
+    border: 1px solid #edf0f4;
+
+    border-radius: 10px;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.permission-item:hover {
+    background: #ffffff;
+
+    border-color: #dbe2ea;
+
+    transform: translateY(-2px);
+}
+
+.permission-item p {
+    margin: 10px 0 0;
+
+    color: #697386;
+
+    font-size: 11px;
+
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   RESPONSIVE - 1100px
+========================================================= */
+
+@media (max-width: 1100px) {
+
+    .system-stats {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .role-permission-grid {
+        grid-template-columns:
+            repeat(3, minmax(0, 1fr));
+    }
+
+}
+
+
+/* =========================================================
+   RESPONSIVE - 900px
+========================================================= */
+
+@media (max-width: 900px) {
+
+    .system-users-toolbar {
+        align-items: stretch;
+
+        flex-direction: column;
+    }
+
+    .system-toolbar-actions {
+        width: 100%;
+
+        justify-content: space-between;
+    }
+
+    .system-toolbar-actions .system-search {
+        flex: 1;
+
+        width: auto;
+    }
+
+}
+
+
+/* =========================================================
+   RESPONSIVE - 800px
+========================================================= */
+
+@media (max-width: 800px) {
+
+    .system-access-page {
+        padding: 20px;
+    }
+
+    .system-access-header {
+        flex-direction: column;
+
+        align-items: flex-start;
+    }
+
+    .system-access-header-info {
+        width: 100%;
+    }
+
+    .role-permission-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+}
+
+
+/* =========================================================
+   RESPONSIVE - 600px
+========================================================= */
+
+@media (max-width: 600px) {
+
+    .system-access-page {
+        padding: 16px;
+    }
+
+    .system-access-header h1 {
+        font-size: 25px;
+    }
+
+    .system-access-header p {
+        font-size: 13px;
+    }
+
+    .system-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .system-stat-card {
+        padding: 15px;
+    }
+
+    .system-users-toolbar {
+        padding: 16px;
+    }
+
+    .system-toolbar-actions {
+        flex-direction: column;
+
+        align-items: stretch;
+
+        width: 100%;
+    }
+
+    .system-toolbar-actions .system-search {
+        width: 100%;
+    }
+
+    .add-user-button {
+        width: 100%;
+    }
+
+    .system-users-table th,
+    .system-users-table td {
+        padding: 12px 14px;
+    }
+
+    .role-permission-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .roles-information {
+        padding: 16px;
+    }
+
+    .add-user-overlay {
+        padding: 12px;
+    }
+
+    .add-user-modal {
+        max-height: calc(100vh - 24px);
+
+        border-radius: 13px;
+    }
+
+    .add-user-modal-header {
+        padding: 16px;
+    }
+
+    .add-user-form {
+        padding: 16px;
+    }
+
+    .add-user-form-actions {
+        flex-direction: column-reverse;
+
+        align-items: stretch;
+    }
+
+    .cancel-user-button,
+    .create-user-button {
+        width: 100%;
+    }
+
+}
+
+
+/* =========================================================
+   ACCESSIBILITY
+========================================================= */
+
+button:focus-visible,
+select:focus-visible,
+input:focus-visible {
+    outline: 2px solid #2563eb;
+
+    outline-offset: 2px;
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .system-stat-card,
+    .permission-item,
+    .delete-user-button,
+    .add-user-button,
+    .system-alert,
+    .add-user-overlay,
+    .add-user-modal {
+        transition: none;
+
+        animation: none;
+    }
+
+    .loading-spinner {
+        animation: none;
+    }
+
+}

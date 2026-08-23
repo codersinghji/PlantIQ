@@ -1,0 +1,1069 @@
+/* =========================================================
+   NAVBAR
+========================================================= */
+
+.navbar {
+    width: 100%;
+    min-height: 78px;
+    height: 78px;
+
+    padding: 0 28px;
+
+    background: #ffffff;
+    border-bottom: 1px solid var(--border);
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    position: sticky;
+    top: 0;
+
+    z-index: 50;
+
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   GREETING
+========================================================= */
+
+.navbar-greeting {
+    min-width: 0;
+}
+
+.navbar-greeting h2 {
+    margin: 0;
+
+    color: var(--text);
+
+    font-size: 19px;
+    font-weight: 700;
+
+    line-height: 1.3;
+
+    letter-spacing: -0.3px;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.navbar-greeting p {
+    margin: 4px 0 0;
+
+    color: var(--text-secondary);
+
+    font-size: 12px;
+    line-height: 1.4;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+/* =========================================================
+   RIGHT SIDE
+========================================================= */
+
+.navbar-right {
+    display: flex;
+    align-items: center;
+
+    gap: 20px;
+
+    flex-shrink: 0;
+}
+
+
+/* =========================================================
+   SYSTEM STATUS
+========================================================= */
+
+.system-status {
+    display: flex;
+    align-items: center;
+
+    gap: 7px;
+
+    padding-right: 20px;
+
+    border-right: 1px solid var(--border);
+}
+
+.wifi-status-icon {
+    width: 32px;
+    height: 32px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: var(--primary);
+
+    flex-shrink: 0;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+
+    border-radius: 50%;
+
+    background: var(--success);
+
+    box-shadow:
+        0 0 0 4px var(--success-light);
+
+    flex-shrink: 0;
+}
+
+.status-text {
+    min-width: 0;
+}
+
+.status-text strong {
+    display: block;
+
+    color: var(--text);
+
+    font-size: 12px;
+    font-weight: 600;
+
+    white-space: nowrap;
+}
+
+.status-text small {
+    display: block;
+
+    margin-top: 2px;
+
+    color: var(--text-muted);
+
+    font-size: 10px;
+
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   NOTIFICATION WRAPPER
+========================================================= */
+
+.notification-wrapper {
+    position: relative;
+
+    flex-shrink: 0;
+}
+
+
+/* =========================================================
+   NOTIFICATION BUTTON
+========================================================= */
+
+.notification {
+    position: relative;
+
+    width: 40px;
+    height: 40px;
+
+    padding: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #ffffff;
+
+    border: 1px solid var(--border);
+    border-radius: 10px;
+
+    color: #475569;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.notification:hover {
+    background: #f8fafc;
+
+    color: var(--primary);
+
+    border-color: #bfdbfe;
+}
+
+.notification:active {
+    transform: scale(0.96);
+}
+
+.notification-active {
+    background: #eff6ff;
+
+    color: var(--primary);
+
+    border-color: #bfdbfe;
+}
+
+
+/* =========================================================
+   NOTIFICATION BADGE
+========================================================= */
+
+.notification-badge {
+    position: absolute;
+
+    top: -5px;
+    right: -5px;
+
+    min-width: 18px;
+    height: 18px;
+
+    padding: 0 4px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: var(--danger);
+
+    color: #ffffff;
+
+    font-size: 9px;
+    font-weight: 700;
+
+    border: 2px solid #ffffff;
+
+    box-sizing: border-box;
+}
+
+
+/* =========================================================
+   NOTIFICATION DROPDOWN
+========================================================= */
+
+.notification-dropdown {
+    position: absolute;
+
+    top: calc(100% + 10px);
+    right: 0;
+
+    width: 350px;
+    max-width: calc(100vw - 30px);
+
+    background: #ffffff;
+
+    border: 1px solid var(--border);
+
+    border-radius: 12px;
+
+    box-shadow:
+        0 15px 35px rgba(15, 23, 42, 0.14),
+        0 4px 10px rgba(15, 23, 42, 0.05);
+
+    overflow: hidden;
+
+    z-index: 500;
+
+    animation: dropdownFade 0.18s ease;
+}
+
+
+/* =========================================================
+   DROPDOWN HEADER
+========================================================= */
+
+.dropdown-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 15px 16px;
+
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.dropdown-header strong {
+    display: block;
+
+    color: var(--text);
+
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.dropdown-header span {
+    display: block;
+
+    margin-top: 3px;
+
+    color: var(--text-muted);
+
+    font-size: 10px;
+}
+
+.dropdown-close {
+    width: 28px;
+    height: 28px;
+
+    padding: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: transparent;
+
+    border: 0;
+    border-radius: 6px;
+
+    color: #64748b;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease;
+}
+
+.dropdown-close:hover {
+    background: #f1f5f9;
+
+    color: var(--text);
+}
+
+
+/* =========================================================
+   NOTIFICATION LIST
+========================================================= */
+
+.notification-list {
+    max-height: 320px;
+
+    overflow-y: auto;
+}
+
+.notification-list::-webkit-scrollbar {
+    width: 5px;
+}
+
+.notification-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+
+    border-radius: 10px;
+}
+
+
+/* =========================================================
+   NOTIFICATION ITEM
+========================================================= */
+
+.notification-item {
+    width: 100%;
+
+    padding: 13px 16px;
+
+    display: flex;
+    align-items: flex-start;
+
+    gap: 10px;
+
+    text-align: left;
+
+    background: transparent;
+
+    border: 0;
+
+    font-family: inherit;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease;
+}
+
+.notification-item:hover {
+    background: #f8fafc;
+}
+
+
+/* =========================================================
+   NOTIFICATION ICON
+========================================================= */
+
+.notification-icon {
+    width: 32px;
+    height: 32px;
+
+    min-width: 32px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 8px;
+}
+
+.notification-icon.success {
+    background: var(--success-light);
+
+    color: #16a34a;
+}
+
+.notification-icon.warning {
+    background: var(--warning-light);
+
+    color: #d97706;
+}
+
+
+/* =========================================================
+   NOTIFICATION CONTENT
+========================================================= */
+
+.notification-content {
+    min-width: 0;
+
+    flex: 1;
+}
+
+.notification-content strong {
+    display: block;
+
+    color: var(--text);
+
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.notification-content p {
+    margin: 3px 0 0;
+
+    color: var(--text-secondary);
+
+    font-size: 10px;
+
+    line-height: 1.45;
+}
+
+.notification-content small {
+    display: block;
+
+    margin-top: 5px;
+
+    color: var(--text-muted);
+
+    font-size: 9px;
+}
+
+
+/* =========================================================
+   VIEW ALL NOTIFICATIONS
+========================================================= */
+
+.view-notifications {
+    width: 100%;
+
+    padding: 12px;
+
+    background: #ffffff;
+
+    border: 0;
+    border-top: 1px solid #f1f5f9;
+
+    color: var(--primary);
+
+    font-size: 11px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease;
+}
+
+.view-notifications:hover {
+    background: #f8fafc;
+}
+
+
+/* =========================================================
+   PROFILE WRAPPER
+========================================================= */
+
+.operator-profile-wrapper {
+    position: relative;
+
+    flex-shrink: 0;
+}
+
+
+/* =========================================================
+   PROFILE BUTTON
+========================================================= */
+
+.operator-profile {
+    min-height: 46px;
+
+    padding: 4px 6px 4px 4px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 9px;
+
+    background: transparent;
+
+    border: 0;
+
+    border-radius: 9px;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease;
+}
+
+.operator-profile:hover {
+    background: #f8fafc;
+}
+
+.operator-profile-active {
+    background: #f1f5f9;
+}
+
+
+/* =========================================================
+   AVATAR
+========================================================= */
+
+.operator-avatar {
+    width: 38px;
+    height: 38px;
+
+    min-width: 38px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: linear-gradient(
+        135deg,
+        #2563eb,
+        #1d4ed8
+    );
+
+    color: #ffffff;
+
+    font-size: 11px;
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   PROFILE INFO
+========================================================= */
+
+.operator-info {
+    min-width: 0;
+
+    text-align: left;
+}
+
+.operator-info strong {
+    display: block;
+
+    max-width: 130px;
+
+    color: var(--text);
+
+    font-size: 12px;
+    font-weight: 600;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.operator-info small {
+    display: block;
+
+    max-width: 130px;
+
+    margin-top: 2px;
+
+    color: var(--text-muted);
+
+    font-size: 10px;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+/* =========================================================
+   ARROW
+========================================================= */
+
+.dropdown-arrow {
+    color: var(--text-secondary);
+
+    transition:
+        transform 0.2s ease;
+}
+
+.dropdown-arrow.rotate {
+    transform: rotate(180deg);
+}
+
+
+/* =========================================================
+   PROFILE DROPDOWN
+========================================================= */
+
+.profile-dropdown {
+    position: absolute;
+
+    top: calc(100% + 10px);
+    right: 0;
+
+    width: 235px;
+
+    padding: 8px;
+
+    background: #ffffff;
+
+    border: 1px solid var(--border);
+
+    border-radius: 12px;
+
+    box-shadow:
+        0 15px 35px rgba(15, 23, 42, 0.14),
+        0 4px 10px rgba(15, 23, 42, 0.05);
+
+    z-index: 500;
+
+    animation: dropdownFade 0.18s ease;
+}
+
+
+/* =========================================================
+   PROFILE DROPDOWN HEADER
+========================================================= */
+
+.profile-dropdown-top {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 10px;
+}
+
+.large-avatar {
+    width: 40px;
+    height: 40px;
+
+    min-width: 40px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background: #dbeafe;
+
+    color: var(--primary);
+
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.profile-dropdown-top > div:last-child {
+    min-width: 0;
+}
+
+.profile-dropdown-top strong {
+    display: block;
+
+    color: var(--text);
+
+    font-size: 12px;
+    font-weight: 700;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.profile-dropdown-top span {
+    display: block;
+
+    margin-top: 3px;
+
+    color: var(--text-muted);
+
+    font-size: 10px;
+
+    white-space: nowrap;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+/* =========================================================
+   DIVIDER
+========================================================= */
+
+.profile-divider {
+    height: 1px;
+
+    margin: 5px 0;
+
+    background: #f1f5f9;
+}
+
+
+/* =========================================================
+   PROFILE MENU ITEM
+========================================================= */
+
+.profile-menu-item {
+    width: 100%;
+
+    padding: 10px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    background: transparent;
+
+    border: 0;
+    border-radius: 7px;
+
+    color: #475569;
+
+    text-align: left;
+
+    font-family: inherit;
+
+    font-size: 11px;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease;
+}
+
+.profile-menu-item:hover {
+    background: #f8fafc;
+
+    color: var(--primary);
+}
+
+.profile-menu-item svg {
+    flex-shrink: 0;
+}
+
+.profile-menu-item span {
+    width: auto;
+
+    text-align: left;
+}
+
+.profile-menu-item.logout {
+    color: #dc2626;
+}
+
+.profile-menu-item.logout:hover {
+    background: #fef2f2;
+
+    color: #dc2626;
+}
+
+
+/* =========================================================
+   DROPDOWN ANIMATION
+========================================================= */
+
+@keyframes dropdownFade {
+
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* =========================================================
+   TABLET
+   1100px
+========================================================= */
+
+@media (max-width: 1100px) {
+
+    .navbar {
+        padding: 0 20px;
+    }
+
+    .navbar-right {
+        gap: 14px;
+    }
+
+    .system-status {
+        padding-right: 14px;
+    }
+
+    .status-text small {
+        display: none;
+    }
+
+    .navbar-greeting p {
+        display: none;
+    }
+
+}
+
+
+/* =========================================================
+   SMALL TABLET
+   900px
+========================================================= */
+
+@media (max-width: 900px) {
+
+    .navbar {
+        padding: 0 16px;
+    }
+
+    .system-status {
+        display: none;
+    }
+
+    .navbar-right {
+        gap: 12px;
+    }
+
+}
+
+
+/* =========================================================
+   MOBILE
+   768px
+========================================================= */
+
+@media (max-width: 768px) {
+
+    .navbar {
+        min-height: 68px;
+        height: 68px;
+
+        padding: 0 14px;
+    }
+
+    .navbar-greeting {
+        max-width: calc(100vw - 220px);
+    }
+
+    .navbar-greeting h2 {
+        font-size: 16px;
+    }
+
+    .navbar-right {
+        gap: 8px;
+    }
+
+    .operator-info {
+        display: none;
+    }
+
+    .operator-profile {
+        padding-right: 2px;
+    }
+
+    .dropdown-arrow {
+        display: none;
+    }
+
+    .notification {
+        width: 38px;
+        height: 38px;
+    }
+
+    .operator-avatar {
+        width: 36px;
+        height: 36px;
+
+        min-width: 36px;
+    }
+
+    .notification-dropdown {
+        position: fixed;
+
+        top: 74px;
+        left: 15px;
+        right: 15px;
+
+        width: auto;
+        max-width: none;
+    }
+
+    .profile-dropdown {
+        position: fixed;
+
+        top: 74px;
+        right: 12px;
+
+        width: min(235px, calc(100vw - 24px));
+    }
+
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+   520px
+========================================================= */
+
+@media (max-width: 520px) {
+
+    .navbar {
+        min-height: 62px;
+        height: 62px;
+
+        padding: 0 10px;
+    }
+
+    .navbar-greeting {
+        max-width: calc(100vw - 135px);
+    }
+
+    .navbar-greeting h2 {
+        font-size: 14px;
+
+        max-width: 100%;
+    }
+
+    .navbar-right {
+        gap: 6px;
+    }
+
+    .notification {
+        width: 36px;
+        height: 36px;
+
+        border-radius: 9px;
+    }
+
+    .operator-avatar {
+        width: 34px;
+        height: 34px;
+
+        min-width: 34px;
+    }
+
+    .notification-dropdown {
+        top: 68px;
+
+        left: 10px;
+        right: 10px;
+    }
+
+    .profile-dropdown {
+        top: 68px;
+
+        right: 10px;
+
+        width: calc(100vw - 20px);
+        max-width: 280px;
+    }
+
+}
+
+
+/* =========================================================
+   VERY SMALL MOBILE
+   380px
+========================================================= */
+
+@media (max-width: 380px) {
+
+    .navbar-greeting {
+        max-width: calc(100vw - 110px);
+    }
+
+    .navbar-greeting h2 {
+        font-size: 13px;
+    }
+
+    .navbar-right {
+        gap: 4px;
+    }
+
+    .notification {
+        width: 34px;
+        height: 34px;
+    }
+
+    .operator-avatar {
+        width: 32px;
+        height: 32px;
+
+        min-width: 32px;
+
+        font-size: 10px;
+    }
+
+    .notification-badge {
+        min-width: 16px;
+        height: 16px;
+
+        font-size: 8px;
+    }
+
+}
+
+
+/* =========================================================
+   ACCESSIBILITY
+========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .notification,
+    .operator-profile,
+    .dropdown-arrow,
+    .profile-menu-item,
+    .profile-dropdown,
+    .notification-dropdown {
+        transition: none;
+        animation: none;
+    }
+
+}
