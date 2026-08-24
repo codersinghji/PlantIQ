@@ -16,7 +16,7 @@ import {
     resetSettings
 } from "../services/api";
 
-import "../styles/settings.css";
+import "../styles/Settings.css";
 
 
 /* =========================================

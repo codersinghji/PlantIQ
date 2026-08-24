@@ -1,17 +1,25 @@
 import axios from "axios";
 
-
 /* =========================================================
    API INSTANCE
 ========================================================= */
 
 const API = axios.create({
-    baseURL: "http://localhost:5000/api",
-
+    baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
     headers: {
         "Content-Type": "application/json",
     },
 });
+
+
+/* =========================================================
+   DEBUG
+========================================================= */
+
+console.log(
+    "PlantIQ API Base URL:",
+    API.defaults.baseURL
+);
 
 
 /* =========================================================
@@ -29,17 +37,13 @@ API.interceptors.request.use(
 
             config.headers.Authorization =
                 `Bearer ${token}`;
-
         }
 
         return config;
-
     },
 
     (error) => {
-
         return Promise.reject(error);
-
     }
 );
 
@@ -72,9 +76,7 @@ export const getAllEquipment = async () => {
 };
 
 
-export const getEquipmentById = async (
-    id
-) => {
+export const getEquipmentById = async (id) => {
 
     const response = await API.get(
         `/equipment/${id}`
@@ -84,9 +86,7 @@ export const getEquipmentById = async (
 };
 
 
-export const getEquipmentDashboard = async (
-    equipmentId
-) => {
+export const getEquipmentDashboard = async (equipmentId) => {
 
     const response = await API.get(
         `/equipment/${equipmentId}/dashboard`
@@ -96,9 +96,7 @@ export const getEquipmentDashboard = async (
 };
 
 
-export const getEquipmentHistory = async (
-    equipmentId
-) => {
+export const getEquipmentHistory = async (equipmentId) => {
 
     const response = await API.get(
         `/equipment/${equipmentId}/history`
@@ -122,9 +120,7 @@ export const getProfile = async () => {
 };
 
 
-export const updateProfile = async (
-    profileData
-) => {
+export const updateProfile = async (profileData) => {
 
     const response = await API.put(
         "/auth/profile",
@@ -135,13 +131,61 @@ export const updateProfile = async (
 };
 
 
-export const changePassword = async (
-    passwordData
-) => {
+export const changePassword = async (passwordData) => {
 
     const response = await API.put(
         "/auth/change-password",
         passwordData
+    );
+
+    return response.data;
+};
+
+
+/* =========================================================
+   FORGOT PASSWORD
+========================================================= */
+
+export const forgotPassword = async (email) => {
+
+    const response = await API.post(
+        "/auth/forgot-password",
+        {
+            email
+        }
+    );
+
+    return response.data;
+};
+
+
+export const verifyOTP = async (email, otp) => {
+
+    const response = await API.post(
+        "/auth/verify-otp",
+        {
+            email,
+            otp
+        }
+    );
+
+    return response.data;
+};
+
+
+export const resetPassword = async (
+    email,
+    otp,
+    newPassword
+) => {
+
+    const response = await API.post(
+        "/auth/reset-password",
+        {
+            email,
+            otp,
+            newPassword
+        }
     );
 
     return response.data;
@@ -162,9 +206,7 @@ export const getSettings = async () => {
 };
 
 
-export const updateSettings = async (
-    settings
-) => {
+export const updateSettings = async (settings) => {
 
     const response = await API.put(
         "/auth/settings",
@@ -192,22 +234,19 @@ export const resetSettings = async () => {
 export const getAllUsers = async () => {
 
     const response = await API.get(
-        "/system-access/users"
+        "/auth/users"
     );
 
     return response.data;
 };
 
 
-export const updateUserRole = async (
-    userId,
-    role
-) => {
+export const updateUserRole = async (userId, role) => {
 
     const response = await API.put(
-        `/system-access/users/${userId}/role`,
+        `/auth/users/${userId}/role`,
         {
-            role,
+            role
         }
     );
 
@@ -215,12 +254,10 @@ export const updateUserRole = async (
 };
 
 
-export const deleteUser = async (
-    userId
-) => {
+export const deleteUser = async (userId) => {
 
     const response = await API.delete(
-        `/system-access/users/${userId}`
+        `/auth/users/${userId}`
     );
 
     return response.data;
@@ -231,11 +268,9 @@ export const deleteUser = async (
    MONITORING
 ========================================================= */
 
-/* =========================================================
-   MONITORING
-========================================================= */
-
-export const getMonitoringData = async (equipmentId = "") => {
+export const getMonitoringData = async (
+    equipmentId = ""
+) => {
 
     const response = await API.get(
         "/monitoring",
@@ -245,13 +280,14 @@ export const getMonitoringData = async (equipmentId = "") => {
                 : {}
         }
     );
+
     return response.data;
 };
 
 
-// =========================================================
-// PREDICTIONS
-// =========================================================
+/* =========================================================
+   PREDICTIONS
+========================================================= */
 
 export const getAllPredictions = async () => {
 
@@ -263,10 +299,6 @@ export const getAllPredictions = async () => {
 };
 
 
-// =========================================================
-// PREDICTION SUMMARY
-// =========================================================
-
 export const getPredictionSummary = async () => {
 
     const response = await API.get(
@@ -276,10 +308,6 @@ export const getPredictionSummary = async () => {
     return response.data;
 };
 
-
-// =========================================================
-// PREDICTION BY ID
-// =========================================================
 
 export const getPredictionById = async (id) => {
 
@@ -291,10 +319,6 @@ export const getPredictionById = async (id) => {
 };
 
 
-// =========================================================
-// PREDICTIONS BY EQUIPMENT
-// =========================================================
-
 export const getPredictionsByEquipment = async (
     equipmentId
 ) => {
@@ -305,7 +329,6 @@ export const getPredictionsByEquipment = async (
 
     return response.data;
 };
-
 
 
 /* =========================================================

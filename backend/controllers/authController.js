@@ -435,41 +435,84 @@ export const verifyOTP = async (req, res) => {
    FORGOT PASSWORD
 ========================================= */
 
+/* =========================================
+   FORGOT PASSWORD
+========================================= */
+
 export const forgotPassword = async (req, res) => {
+
     try {
+
+        console.log("=================================");
+        console.log("FORGOT PASSWORD CONTROLLER HIT");
+        console.log("BODY:", req.body);
+        console.log("=================================");
+
         const { email } = req.body;
 
+        // Check email
         if (!email) {
+
+            console.log("❌ Email missing");
+
             return res.status(400).json({
                 success: false,
                 message: "Email is required"
             });
         }
 
-        const normalizedEmail = email.trim().toLowerCase();
+        // Normalize email
+        const normalizedEmail =
+            email.trim().toLowerCase();
 
+        console.log(
+            "🔎 Searching MongoDB for:",
+            normalizedEmail
+        );
+
+        // Find user
         const user = await User.findOne({
             email: normalizedEmail
         });
 
+        console.log(
+            "👤 User found:",
+            user ? "YES" : "NO"
+        );
+
+        // User doesn't exist
         if (!user) {
+
+            console.log(
+                "❌ No user found with email:",
+                normalizedEmail
+            );
+
             return res.status(404).json({
                 success: false,
                 message: "User not found"
             });
         }
-            
-             const otp = Math.floor(
-    100000 + Math.random() * 900000
-).toString();
 
-console.log("=================================");
-console.log("📧 PASSWORD RESET OTP");
-console.log("Email:", normalizedEmail);
-console.log("OTP:", otp);
-console.log("=================================");
+        // =========================================
+        // GENERATE OTP
+        // =========================================
 
-user.otp = otp;
+        const otp = Math.floor(
+            100000 + Math.random() * 900000
+        ).toString();
+
+        console.log("=================================");
+        console.log("📧 PASSWORD RESET OTP");
+        console.log("Email:", normalizedEmail);
+        console.log("OTP:", otp);
+        console.log("=================================");
+
+        // =========================================
+        // SAVE OTP
+        // =========================================
+
+        user.otp = otp;
 
         user.otpExpire = new Date(
             Date.now() + 10 * 60 * 1000
@@ -477,66 +520,109 @@ user.otp = otp;
 
         await user.save();
 
-        /*
-         * Send OTP through Gmail if EMAIL_USER
-         * and EMAIL_PASS are configured.
-         */
+        console.log("✅ OTP saved in MongoDB");
 
-        if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-            const transporter = nodemailer.createTransport({
-                service: "gmail",
-                auth: {
-                    user: process.env.EMAIL_USER,
-                    pass: process.env.EMAIL_PASS
-                }
-            });
+        // =========================================
+        // SEND EMAIL
+        // =========================================
+
+        console.log(
+            "EMAIL_USER:",
+            process.env.EMAIL_USER
+        );
+
+        if (
+            process.env.EMAIL_USER &&
+            process.env.EMAIL_PASS
+        ) {
+
+            console.log("📧 Creating Gmail transporter...");
+
+            const transporter =
+                nodemailer.createTransport({
+
+                    service: "gmail",
+
+                    auth: {
+                        user: process.env.EMAIL_USER,
+                        pass: process.env.EMAIL_PASS
+                    }
+
+                });
+
+            console.log("📧 Sending OTP email...");
 
             await transporter.sendMail({
+
                 from: process.env.EMAIL_USER,
+
                 to: normalizedEmail,
+
                 subject: "PlantIQ Password Reset OTP",
+
                 html: `
                     <div style="font-family: Arial, sans-serif;">
+
                         <h2>PlantIQ</h2>
-                        <p>Your password reset OTP is:</p>
+
+                        <p>
+                            Your password reset OTP is:
+                        </p>
 
                         <h1>${otp}</h1>
 
                         <p>
-                            This OTP will expire in 10 minutes.
+                            This OTP will expire in
+                            10 minutes.
                         </p>
+
                     </div>
                 `
+
             });
+
+            console.log(
+                "✅ OTP EMAIL SENT SUCCESSFULLY"
+            );
+
+        } else {
+
+            console.log(
+                "⚠️ EMAIL_USER or EMAIL_PASS is missing"
+            );
+
         }
 
-        /*
-         * Do NOT expose OTP in production.
-         * For development, you can temporarily enable it
-         * by setting:
-         *
-         * RETURN_OTP=true
-         */
+        // =========================================
+        // RESPONSE
+        // =========================================
 
-        const response = {
+        return res.status(200).json({
+
             success: true,
-            message: "OTP Generated Successfully"
-        };
 
-        if (process.env.RETURN_OTP === "true") {
-            response.otp = otp;
-        }
+            message: "OTP sent successfully"
 
-        return res.status(200).json(response);
+        });
 
     } catch (error) {
-        console.error("Forgot Password Error:", error);
+
+        console.error(
+            "❌ FORGOT PASSWORD ERROR:"
+        );
+
+        console.error(error);
 
         return res.status(500).json({
+
             success: false,
+
             message: error.message
+
         });
+
     }
+
 };
 
 /* =========================================
