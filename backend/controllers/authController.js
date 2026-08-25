@@ -84,21 +84,24 @@ export const registerUser = async (req, res) => {
         // =========================================
 
         const allowedRoles = [
-            "Admin",
-            "Engineer",
-            "Technician",
-            "Viewer",
-            "operator"
-        ];
+    "admin",
+    "engineer",
+    "technician",
+    "viewer",
+    "operator",
+    "plant_manager"
+];
 
+const normalizedRole = role?.trim().toLowerCase();
 
-        // If no role is provided,
-        // create the user as operator.
+if (normalizedRole && !allowedRoles.includes(normalizedRole)) {
+    return res.status(400).json({
+        success: false,
+        message: `Invalid role. Allowed roles: ${allowedRoles.join(", ")}`
+    });
+}
 
-        const userRole =
-            role && allowedRoles.includes(role)
-                ? role
-                : "operator";
+const userRole = normalizedRole || "operator";
 
 
         // =========================================

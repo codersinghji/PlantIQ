@@ -17,7 +17,17 @@ const allowRoles = (...allowedRoles) => {
         console.log("Allowed roles:", allowedRoles);
         console.log("================================");
 
-        if (!allowedRoles.includes(req.user.role)) {
+        // Convert both user role and allowed roles to lowercase
+        const userRole = req.user.role?.trim().toLowerCase();
+
+        const normalizedAllowedRoles = allowedRoles.map(
+            role => role.trim().toLowerCase()
+        );
+
+        console.log("Normalized user role:", userRole);
+        console.log("Normalized allowed roles:", normalizedAllowedRoles);
+
+        if (!normalizedAllowedRoles.includes(userRole)) {
 
             return res.status(403).json({
                 success: false,
