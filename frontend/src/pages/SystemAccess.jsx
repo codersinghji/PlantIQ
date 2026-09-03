@@ -1,89 +1,307 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import API from "../services/api";
 import "../styles/SystemAccess.css";
 
+/* =========================================================
+   ROLES
+========================================================= */
+
 const ROLES = [
-    "Admin",
-    "Engineer",
-    "Technician",
-    "Viewer",
-    "operator"
+    {
+        value: "admin",
+        label: "Admin",
+    },
+    {
+        value: "engineer",
+        label: "Engineer",
+    },
+    {
+        value: "technician",
+        label: "Technician",
+    },
+    {
+        value: "viewer",
+        label: "Viewer",
+    },
+    {
+        value: "operator",
+        label: "Operator",
+    },
+    {
+        value: "plant_manager",
+        label: "Plant Manager",
+    },
 ];
 
+/* =========================================================
+   STATUS FILTERS
+========================================================= */
+
+const STATUS_FILTERS = [
+    "all",
+    "pending",
+    "approved",
+    "rejected",
+];
+
+/* =========================================================
+   EMPTY USER
+========================================================= */
+
+const EMPTY_USER = {
+    name: "",
+    email: "",
+    password: "",
+    role: "engineer",
+};
+
+/* =========================================================
+   SYSTEM ACCESS
+========================================================= */
+
 const SystemAccess = () => {
+    /* =====================================================
+       USERS
+    ===================================================== */
+
     const [users, setUsers] = useState([]);
-    const [search, setSearch] = useState("");
 
-    const [loading, setLoading] = useState(true);
-    const [actionLoading, setActionLoading] = useState(null);
-
-    const [error, setError] = useState("");
-    const [success, setSuccess] = useState("");
+    /* =====================================================
+       CURRENT USER
+    ===================================================== */
 
     const [currentUser, setCurrentUser] = useState({});
 
-    // Add User Modal
-    const [showAddUser, setShowAddUser] = useState(false);
+    /* =====================================================
+       SEARCH / FILTER
+    ===================================================== */
 
-    const [newUser, setNewUser] = useState({
-        name: "",
-        email: "",
-        password: "",
-        role: "Engineer"
-    });
+    const [search, setSearch] = useState("");
 
-    const [creatingUser, setCreatingUser] = useState(false);
+    const [statusFilter, setStatusFilter] =
+        useState("all");
+
+    /* =====================================================
+       LOADING
+    ===================================================== */
+
+    const [loading, setLoading] =
+        useState(true);
+
+    const [actionLoading, setActionLoading] =
+        useState(null);
+
+    const [creatingUser, setCreatingUser] =
+        useState(false);
+
+    /* =====================================================
+       ALERTS
+    ===================================================== */
+
+    const [error, setError] = useState("");
+
+    const [success, setSuccess] = useState("");
+
+    /* =====================================================
+       ADD USER MODAL
+    ===================================================== */
+
+    const [showAddUser, setShowAddUser] =
+        useState(false);
+
+    const [newUser, setNewUser] =
+        useState(EMPTY_USER);
+
+    /* =====================================================
+       CURRENT USER ID
+    ===================================================== */
 
     const currentUserId =
-        currentUser?._id || currentUser?.id;
+        currentUser?._id ||
+        currentUser?.id;
 
-    // =========================================================
-    // ADMIN + OPERATOR CAN MANAGE
-    // =========================================================
+    /* =====================================================
+       CURRENT USER ROLE
+    ===================================================== */
 
-    const canManageUsers =
-        currentUser?.role === "Admin" ||
-        currentUser?.role === "operator";
+    const currentUserRole = String(
+        currentUser?.role || ""
+    )
+        .trim()
+        .toLowerCase();
 
-    // =========================================================
-    // ROLE CLASS
-    // =========================================================
+    /* =====================================================
+       PERMISSIONS
+    ===================================================== */
+
+    const isAdmin =
+        currentUserRole === "admin";
+
+    const isOperator =
+        currentUserRole === "operator";
+
+    // User-management endpoints are Admin-only.
+    const canManageUsers = isAdmin;
+    const canApproveUsers = isAdmin;
+
+    /* =====================================================
+       ROLE LABEL
+    ===================================================== */
+
+    const getRoleLabel = (role) => {
+        if (!role) {
+            return "Unknown";
+        }
+
+        const normalized = String(role)
+            .trim()
+            .toLowerCase();
+
+        switch (normalized) {
+            case "admin":
+                return "Admin";
+
+            case "engineer":
+                return "Engineer";
+
+            case "technician":
+                return "Technician";
+
+            case "viewer":
+                return "Viewer";
+
+            case "operator":
+                return "Operator";
+
+            case "plant_manager":
+            case "plant-manager":
+                return "Plant Manager";
+
+            default:
+                return String(role)
+                    .replace(/_/g, " ")
+                    .replace(/-/g, " ")
+                    .replace(/\b\w/g, (letter) =>
+                        letter.toUpperCase()
+                    );
+        }
+    };
+
+    /* =====================================================
+       ROLE CLASS
+    ===================================================== */
 
     const getRoleClass = (role) => {
-        switch (role) {
-            case "Admin":
+        const normalized = String(
+            role || ""
+        )
+            .trim()
+            .toLowerCase();
+
+        switch (normalized) {
+            case "admin":
                 return "role-admin";
 
-            case "Engineer":
+            case "engineer":
                 return "role-engineer";
 
-            case "Technician":
+            case "technician":
                 return "role-technician";
 
-            case "Viewer":
+            case "viewer":
                 return "role-viewer";
 
             case "operator":
                 return "role-operator";
+
+            case "plant_manager":
+            case "plant-manager":
+                return "role-manager";
 
             default:
                 return "role-default";
         }
     };
 
-    // =========================================================
-    // LOAD CURRENT USER
-    // =========================================================
+    /* =====================================================
+       ACCOUNT STATUS
+    ===================================================== */
+
+    const getAccountStatus = (user) => {
+        const rawStatus = String(
+            user?.status ??
+            user?.approvalStatus ??
+            ""
+        )
+            .trim()
+            .toLowerCase();
+
+        if (
+            rawStatus === "pending" ||
+            rawStatus === "pending approval"
+        ) {
+            return "pending";
+        }
+
+        if (
+            rawStatus === "rejected" ||
+            rawStatus === "reject"
+        ) {
+            return "rejected";
+        }
+
+        if (
+            rawStatus === "approved" ||
+            rawStatus === "active"
+        ) {
+            return "approved";
+        }
+
+        /*
+         * Old users that do not have a status
+         * are treated as approved.
+         */
+        return "approved";
+    };
+
+    /* =====================================================
+       STATUS LABEL
+    ===================================================== */
+
+    const getStatusLabel = (status) => {
+        switch (status) {
+            case "pending":
+                return "Pending Approval";
+
+            case "approved":
+                return "Active";
+
+            case "rejected":
+                return "Rejected";
+
+            default:
+                return "Unknown";
+        }
+    };
+
+    /* =====================================================
+       LOAD CURRENT USER
+    ===================================================== */
 
     const loadCurrentUser = async () => {
         try {
-            const response = await API.get("/auth/profile");
+            const response =
+                await API.get("/auth/profile");
 
             const user =
                 response.data?.user ||
-                response.data;
+                response.data ||
+                {};
 
-            console.log("CURRENT USER:", user);
+            console.log(
+                "CURRENT USER:",
+                user
+            );
 
             setCurrentUser(user);
 
@@ -93,33 +311,40 @@ const SystemAccess = () => {
             );
 
             return user;
-
         } catch (err) {
             console.error(
                 "Profile Error:",
                 err
             );
 
+            /*
+             * Fallback to localStorage
+             */
+
             try {
                 const storedUser =
                     JSON.parse(
-                        localStorage.getItem("user") || "{}"
+                        localStorage.getItem(
+                            "user"
+                        ) || "{}"
                     );
 
-                setCurrentUser(storedUser);
+                setCurrentUser(
+                    storedUser
+                );
 
                 return storedUser;
-
             } catch {
                 setCurrentUser({});
+
                 return {};
             }
         }
     };
 
-    // =========================================================
-    // LOAD USERS
-    // =========================================================
+    /* =====================================================
+       LOAD USERS
+    ===================================================== */
 
     const loadUsers = async () => {
         try {
@@ -127,17 +352,48 @@ const SystemAccess = () => {
             setError("");
 
             const response =
-                await API.get("/auth/users");
+                await API.get(
+                    "/auth/users"
+                );
 
             console.log(
-                "USERS:",
+                "USERS RESPONSE:",
                 response.data
             );
 
-            setUsers(
-                response.data?.users || []
+            let loadedUsers = [];
+
+            if (
+                Array.isArray(
+                    response.data
+                )
+            ) {
+                loadedUsers =
+                    response.data;
+            } else if (
+                Array.isArray(
+                    response.data?.users
+                )
+            ) {
+                loadedUsers =
+                    response.data.users;
+            } else if (
+                Array.isArray(
+                    response.data?.data
+                )
+            ) {
+                loadedUsers =
+                    response.data.data;
+            }
+
+            console.log(
+                "LOADED USERS:",
+                loadedUsers
             );
 
+            setUsers(
+                loadedUsers
+            );
         } catch (err) {
             console.error(
                 "Load Users Error:",
@@ -146,29 +402,32 @@ const SystemAccess = () => {
 
             setError(
                 err.response?.data?.message ||
-                "Failed to load users"
+                "Failed to load users."
             );
-
         } finally {
             setLoading(false);
         }
     };
 
-    // =========================================================
-    // INITIAL LOAD
-    // =========================================================
+    /* =====================================================
+       INITIAL LOAD
+    ===================================================== */
 
     useEffect(() => {
         const initialize = async () => {
-
             const user =
                 await loadCurrentUser();
 
-            const allowed =
-                user?.role === "Admin" ||
-                user?.role === "operator";
+            const role = String(
+                user?.role || ""
+            )
+                .trim()
+                .toLowerCase();
 
-            if (allowed) {
+            if (
+                role === "admin" ||
+                role === "operator"
+            ) {
                 await loadUsers();
             } else {
                 setLoading(false);
@@ -178,30 +437,26 @@ const SystemAccess = () => {
         initialize();
     }, []);
 
-    // =========================================================
-    // OPEN ADD USER
-    // =========================================================
+    /* =====================================================
+       OPEN ADD USER
+    ===================================================== */
 
     const openAddUser = () => {
         setError("");
         setSuccess("");
 
         setNewUser({
-            name: "",
-            email: "",
-            password: "",
-            role: "Engineer"
+            ...EMPTY_USER,
         });
 
         setShowAddUser(true);
     };
 
-    // =========================================================
-    // CLOSE ADD USER
-    // =========================================================
+    /* =====================================================
+       CLOSE ADD USER
+    ===================================================== */
 
     const closeAddUser = () => {
-
         if (creatingUser) {
             return;
         }
@@ -209,65 +464,92 @@ const SystemAccess = () => {
         setShowAddUser(false);
 
         setNewUser({
-            name: "",
-            email: "",
-            password: "",
-            role: "Engineer"
+            ...EMPTY_USER,
         });
     };
 
-    // =========================================================
-    // CREATE USER
-    // =========================================================
+    /* =====================================================
+       CREATE USER
+    ===================================================== */
 
-    const handleCreateUser = async (e) => {
+    const handleCreateUser = async (event) => {
+        event.preventDefault();
 
-        e.preventDefault();
-
-        if (!newUser.name.trim()) {
-            setError("Name is required.");
+        if (!isAdmin) {
+            setError("Only Admin can create users.");
             return;
         }
 
-        if (!newUser.email.trim()) {
-            setError("Email is required.");
+        setError("");
+        setSuccess("");
+
+        const name =
+            newUser.name.trim();
+
+        const email =
+            newUser.email
+                .trim()
+                .toLowerCase();
+
+        const password =
+            newUser.password;
+
+        const role =
+            newUser.role;
+
+        if (!name) {
+            setError(
+                "Name is required."
+            );
             return;
         }
 
-        if (!newUser.password) {
-            setError("Password is required.");
+        if (!email) {
+            setError(
+                "Email is required."
+            );
             return;
         }
 
-        if (newUser.password.length < 8) {
+        if (!email.includes("@")) {
+            setError(
+                "Please enter a valid email address."
+            );
+            return;
+        }
+
+        if (!password) {
+            setError(
+                "Password is required."
+            );
+            return;
+        }
+
+        if (password.length < 8) {
             setError(
                 "Password must be at least 8 characters."
             );
             return;
         }
 
+        if (!role) {
+            setError(
+                "Please select a role."
+            );
+            return;
+        }
+
         try {
-
             setCreatingUser(true);
-
-            setError("");
-            setSuccess("");
 
             const response =
                 await API.post(
                     "/auth/users",
                     {
-                        name:
-                            newUser.name.trim(),
-
-                        email:
-                            newUser.email.trim(),
-
-                        password:
-                            newUser.password,
-
-                        role:
-                            newUser.role
+                        name,
+                        email,
+                        password,
+                        role,
                     }
                 );
 
@@ -277,37 +559,30 @@ const SystemAccess = () => {
             );
 
             const createdUser =
-                response.data?.user;
+                response.data?.user ||
+                response.data?.data;
 
-            if (!createdUser) {
-                throw new Error(
-                    "User was created but server returned no user data."
+            if (createdUser) {
+                setUsers(
+                    (previous) => [
+                        ...previous,
+                        createdUser,
+                    ]
                 );
+            } else {
+                await loadUsers();
             }
-
-            // Add new user immediately
-            setUsers(
-                previousUsers => [
-                    ...previousUsers,
-                    createdUser
-                ]
-            );
 
             setShowAddUser(false);
 
             setNewUser({
-                name: "",
-                email: "",
-                password: "",
-                role: "Engineer"
+                ...EMPTY_USER,
             });
 
             setSuccess(
-                `${createdUser.name} was created successfully.`
+                `${name} was created successfully.`
             );
-
         } catch (err) {
-
             console.error(
                 "Create User Error:",
                 err
@@ -316,27 +591,87 @@ const SystemAccess = () => {
             setError(
                 err.response?.data?.message ||
                 err.message ||
-                "Failed to create user"
+                "Failed to create user."
             );
-
         } finally {
-
             setCreatingUser(false);
         }
     };
 
-    // =========================================================
-    // ROLE CHANGE
-    // =========================================================
+    /* =====================================================
+       APPROVE USER
+    ===================================================== */
+    const handleApprove = async (userId) => {
+    if (!canApproveUsers) {
+        setError("Only Admin can approve registrations.");
+        return;
+    }
 
-    const handleRoleChange = async (
-        user,
-        newRole
-    ) => {
+    try {
+        setLoading(true);
+        setError("");
+        setSuccess("");
 
-        if (!canManageUsers) {
+        console.log("Approving user:", userId);
+
+        const response = await API.put(
+            `/auth/users/${userId}/approve`
+        );
+
+        console.log(
+            "APPROVE RESPONSE:",
+            response.data
+        );
+
+        if (response.data.success) {
+
+            const approvedUser = response.data.user;
+
+            setUsers((prevUsers) =>
+                prevUsers.map((user) =>
+                    user._id === userId
+                        ? {
+                            ...user,
+                            role: approvedUser.role,
+                            status: "approved"
+                        }
+                        : user
+                )
+            );
+
+                setSuccess(
+                `${approvedUser.name} approved successfully as ${getRoleLabel(approvedUser.role)}.`
+            );
+
+            // Reload from database
+            await loadUsers();
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Approve Error:",
+            error.response?.data || error
+        );
+
+        setError(
+            error.response?.data?.message ||
+            "Failed to approve user"
+        );
+
+    } finally {
+        setLoading(false);
+    }
+   };
+    
+    /* =====================================================
+       REJECT USER
+    ===================================================== */
+
+    const handleReject = async (user) => {
+        if (!canApproveUsers) {
             setError(
-                "You do not have permission to change roles."
+                "Only Admin can reject registrations."
             );
             return;
         }
@@ -346,19 +681,23 @@ const SystemAccess = () => {
             String(currentUserId)
         ) {
             setError(
-                "You cannot change your own role."
+                "You cannot reject your own account."
             );
             return;
         }
 
-        if (user.role === newRole) {
+        const confirmed =
+            window.confirm(
+                `Reject ${user.name}'s registration?\n\nThis user will not be allowed to log in.`
+            );
+
+        if (!confirmed) {
             return;
         }
 
         try {
-
             setActionLoading(
-                `role-${user._id}`
+                `reject-${user._id}`
             );
 
             setError("");
@@ -366,57 +705,161 @@ const SystemAccess = () => {
 
             const response =
                 await API.put(
-                    `/auth/users/${user._id}/role`,
-                    {
-                        role: newRole
-                    }
+                    `/auth/users/${user._id}/reject`
                 );
 
             console.log(
-                "ROLE UPDATE:",
+                "REJECT RESPONSE:",
                 response.data
             );
 
-            setUsers(previous =>
-                previous.map(item =>
-                    String(item._id) ===
-                    String(user._id)
-                        ? {
-                            ...item,
-                            role: newRole
-                        }
-                        : item
-                )
+            /*
+             * Update UI immediately
+             */
+
+            setUsers(
+                (previous) =>
+                    previous.map(
+                        (item) =>
+                            String(
+                                item._id
+                            ) ===
+                            String(
+                                user._id
+                            )
+                                ? {
+                                      ...item,
+                                      status:
+                                          "rejected",
+                                      approvalStatus:
+                                          "rejected",
+                                  }
+                                : item
+                    )
             );
 
             setSuccess(
-                `${user.name}'s role changed to ${newRole}.`
+                `${user.name}'s registration has been rejected.`
             );
 
-        } catch (err) {
+            /*
+             * Refresh database data
+             */
 
+            await loadUsers();
+        } catch (err) {
             console.error(
-                "Role Update Error:",
+                "Reject User Error:",
                 err
             );
 
             setError(
                 err.response?.data?.message ||
-                "Failed to update role"
+                "Failed to reject user."
             );
-
         } finally {
-
             setActionLoading(null);
         }
     };
 
-    // =========================================================
-    // DELETE USER
-    // =========================================================
+    /* =====================================================
+       CHANGE ROLE
+    ===================================================== */
+
+    const handleRoleChange = async (userId, newRole) => {
+        const normalizedUserId =
+            typeof userId === "object" && userId !== null
+                ? userId._id || userId.id
+                : userId;
+
+        const normalizedRole = String(newRole || "")
+            .trim()
+            .toLowerCase()
+            .replace(/-/g, "_");
+
+        if (!normalizedUserId) {
+            setError("Unable to change role: user ID is missing.");
+            return;
+        }
+
+        if (!normalizedRole) {
+            setError("Please select a valid role.");
+            return;
+        }
+
+        if (!isAdmin) {
+            setError("Only Admin can change user roles.");
+            return;
+        }
+
+        try {
+            setActionLoading(`role-${normalizedUserId}`);
+            setError("");
+            setSuccess("");
+
+            console.log("=================================");
+            console.log("CHANGING ROLE");
+            console.log("USER ID:", normalizedUserId);
+            console.log("NEW ROLE:", normalizedRole);
+            console.log("=================================");
+
+            const response = await API.put(
+                `/auth/users/${normalizedUserId}/role`,
+                { role: normalizedRole }
+            );
+
+            console.log("ROLE UPDATE RESPONSE:", response.data);
+
+            if (response.data?.success) {
+                const updatedUser = response.data?.user || {};
+
+                setUsers((previousUsers) =>
+                    previousUsers.map((item) =>
+                        String(item._id) === String(normalizedUserId)
+                            ? {
+                                  ...item,
+                                  ...updatedUser,
+                                  role:
+                                      updatedUser.role ||
+                                      normalizedRole,
+                              }
+                            : item
+                    )
+                );
+
+                setSuccess(
+                    `${updatedUser.name || "User"}'s role changed to ${getRoleLabel(
+                        updatedUser.role || normalizedRole
+                    )}.`
+                );
+
+                await loadUsers();
+            } else {
+                setError(
+                    response.data?.message ||
+                    "Failed to change role."
+                );
+            }
+        } catch (error) {
+            console.error(
+                "ROLE CHANGE ERROR:",
+                error.response?.data || error
+            );
+
+            setError(
+                error.response?.data?.message ||
+                "Failed to change role."
+            );
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
+    /* =====================================================
+       DELETE USER
+    ===================================================== */
 
     const handleDelete = async (user) => {
-
         if (!canManageUsers) {
             setError(
                 "You do not have permission to delete users."
@@ -444,7 +887,6 @@ const SystemAccess = () => {
         }
 
         try {
-
             setActionLoading(
                 `delete-${user._id}`
             );
@@ -458,24 +900,27 @@ const SystemAccess = () => {
                 );
 
             console.log(
-                "DELETE:",
+                "DELETE RESPONSE:",
                 response.data
             );
 
-            setUsers(previous =>
-                previous.filter(
-                    item =>
-                        String(item._id) !==
-                        String(user._id)
-                )
+            setUsers(
+                (previous) =>
+                    previous.filter(
+                        (item) =>
+                            String(
+                                item._id
+                            ) !==
+                            String(
+                                user._id
+                            )
+                    )
             );
 
             setSuccess(
                 `${user.name} was deleted successfully.`
             );
-
         } catch (err) {
-
             console.error(
                 "Delete Error:",
                 err
@@ -483,49 +928,184 @@ const SystemAccess = () => {
 
             setError(
                 err.response?.data?.message ||
-                "Failed to delete user"
+                "Failed to delete user."
             );
-
         } finally {
-
             setActionLoading(null);
         }
     };
 
-    // =========================================================
-    // SEARCH
-    // =========================================================
+    /* =====================================================
+       REFRESH
+    ===================================================== */
 
-    const searchValue =
-        search.trim().toLowerCase();
+    const handleRefresh = async () => {
+        setError("");
+        setSuccess("");
 
-    const filteredUsers =
-        users.filter(user =>
-            user.name
-                ?.toLowerCase()
-                .includes(searchValue) ||
+        await loadUsers();
+    };
 
-            user.email
-                ?.toLowerCase()
-                .includes(searchValue) ||
+    /* =====================================================
+       COUNTS
+    ===================================================== */
 
-            user.role
-                ?.toLowerCase()
-                .includes(searchValue)
+    const totalUsers =
+        users.length;
+
+    const pendingUserList =
+        users.filter(
+            (user) =>
+                getAccountStatus(user) ===
+                "pending"
         );
 
-    // =========================================================
-    // UI
-    // =========================================================
+    const pendingUsers =
+        pendingUserList.length;
+
+    const approvedUsers =
+        users.filter(
+            (user) =>
+                getAccountStatus(user) ===
+                "approved"
+        ).length;
+
+    const rejectedUsers =
+        users.filter(
+            (user) =>
+                getAccountStatus(user) ===
+                "rejected"
+        ).length;
+
+    const adminUsers =
+        users.filter(
+            (user) =>
+                String(
+                    user.role || ""
+                ).toLowerCase() ===
+                "admin"
+        ).length;
+
+    const engineerUsers =
+        users.filter(
+            (user) =>
+                String(
+                    user.role || ""
+                ).toLowerCase() ===
+                "engineer"
+        ).length;
+
+    const technicianUsers =
+        users.filter(
+            (user) =>
+                String(
+                    user.role || ""
+                ).toLowerCase() ===
+                "technician"
+        ).length;
+
+    /* =====================================================
+       FILTER USERS
+    ===================================================== */
+
+    const filteredUsers =
+        useMemo(() => {
+            const searchValue =
+                search
+                    .trim()
+                    .toLowerCase();
+
+            return users.filter(
+                (user) => {
+                    const name =
+                        String(
+                            user.name || ""
+                        ).toLowerCase();
+
+                    const email =
+                        String(
+                            user.email || ""
+                        ).toLowerCase();
+
+                    const role =
+                        String(
+                            user.role || ""
+                        ).toLowerCase();
+
+                    const matchesSearch =
+                        !searchValue ||
+                        name.includes(
+                            searchValue
+                        ) ||
+                        email.includes(
+                            searchValue
+                        ) ||
+                        role.includes(
+                            searchValue
+                        );
+
+                    const status =
+                        getAccountStatus(
+                            user
+                        );
+
+                    const matchesStatus =
+                        statusFilter ===
+                            "all" ||
+                        status ===
+                            statusFilter;
+
+                    return (
+                        matchesSearch &&
+                        matchesStatus
+                    );
+                }
+            );
+        }, [
+            users,
+            search,
+            statusFilter,
+        ]);
+
+    /* =====================================================
+       FORMAT DATE
+    ===================================================== */
+
+    const formatDate = (date) => {
+        if (!date) {
+            return "—";
+        }
+
+        try {
+            return new Date(
+                date
+            ).toLocaleDateString(
+                "en-IN",
+                {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                }
+            );
+        } catch {
+            return "—";
+        }
+    };
+
+    /* =====================================================
+       RENDER
+    ===================================================== */
 
     return (
         <div className="system-access-page">
 
-            {/* HEADER */}
+            {/* =================================================
+                HEADER
+            ================================================= */}
+
             <div className="system-access-header">
 
                 <div>
-
                     <div className="system-access-eyebrow">
                         SECURITY & ACCESS
                     </div>
@@ -535,10 +1115,10 @@ const SystemAccess = () => {
                     </h1>
 
                     <p>
-                        Manage users, roles and system
-                        permissions.
+                        Manage users, roles,
+                        registrations and
+                        system permissions.
                     </p>
-
                 </div>
 
                 <div className="system-access-header-info">
@@ -551,16 +1131,18 @@ const SystemAccess = () => {
 
                         <strong>
                             {canManageUsers
-                                ? currentUser.role === "Admin"
-                                    ? "Administrator"
+                                ? isAdmin
+                                    ? "Main Administrator"
                                     : "System Operator"
                                 : "Restricted Access"}
                         </strong>
 
                         <span>
                             {canManageUsers
-                                ? `${users.length} registered users`
-                                : `${currentUser.role || "Unknown"} account`}
+                                ? `${totalUsers} registered users`
+                                : `${getRoleLabel(
+                                      currentUser.role
+                                  )} account`}
                         </span>
 
                     </div>
@@ -569,7 +1151,10 @@ const SystemAccess = () => {
 
             </div>
 
-            {/* ERROR */}
+            {/* =================================================
+                ALERT - ERROR
+            ================================================= */}
+
             {error && (
                 <div className="system-alert system-alert-error">
 
@@ -583,7 +1168,9 @@ const SystemAccess = () => {
 
                     <button
                         type="button"
-                        onClick={() => setError("")}
+                        onClick={() =>
+                            setError("")
+                        }
                     >
                         ×
                     </button>
@@ -591,7 +1178,10 @@ const SystemAccess = () => {
                 </div>
             )}
 
-            {/* SUCCESS */}
+            {/* =================================================
+                ALERT - SUCCESS
+            ================================================= */}
+
             {success && (
                 <div className="system-alert system-alert-success">
 
@@ -605,7 +1195,9 @@ const SystemAccess = () => {
 
                     <button
                         type="button"
-                        onClick={() => setSuccess("")}
+                        onClick={() =>
+                            setSuccess("")
+                        }
                     >
                         ×
                     </button>
@@ -613,32 +1205,46 @@ const SystemAccess = () => {
                 </div>
             )}
 
-            {/* RESTRICTED */}
-            {!canManageUsers && !loading && (
-                <div className="system-alert system-alert-error">
+            {/* =================================================
+                RESTRICTED ACCESS
+            ================================================= */}
 
-                    <span>
-                        🔒
-                    </span>
+            {!canManageUsers &&
+                !loading && (
+                    <div className="system-alert system-alert-error">
 
-                    <span>
-                        You are logged in as{" "}
-                        <strong>
-                            {currentUser.role || "Unknown"}
-                        </strong>
-                        . Only Admin and operator users
-                        can manage system access.
-                    </span>
+                        <span>
+                            🔒
+                        </span>
 
-                </div>
-            )}
+                        <span>
+                            You are logged in as{" "}
+                            <strong>
+                                {getRoleLabel(
+                                    currentUser.role
+                                )}
+                            </strong>
+                            . Only Admin users can
+                            manage system access.
+                        </span>
 
-            {/* ADMIN / OPERATOR CONTENT */}
+                    </div>
+                )}
+
+            {/* =================================================
+                ADMIN / OPERATOR CONTENT
+            ================================================= */}
+
             {canManageUsers && (
                 <>
 
-                    {/* STATS */}
+                    {/* =================================================
+                        STATISTICS
+                    ================================================= */}
+
                     <div className="system-stats">
+
+                        {/* TOTAL */}
 
                         <div className="system-stat-card">
 
@@ -652,79 +1258,90 @@ const SystemAccess = () => {
                                 </span>
 
                                 <strong>
-                                    {users.length}
+                                    {totalUsers}
                                 </strong>
                             </div>
 
                         </div>
 
-                        <div className="system-stat-card">
+                        {/* PENDING */}
 
-                            <div className="stat-icon purple">
-                                🛡️
+                        <div
+                            className={`system-stat-card pending-stat ${
+                                pendingUsers > 0
+                                    ? "has-pending"
+                                    : ""
+                            }`}
+                            onClick={() => {
+                                if (
+                                    pendingUsers >
+                                    0
+                                ) {
+                                    setStatusFilter(
+                                        "pending"
+                                    );
+                                }
+                            }}
+                            style={{
+                                cursor:
+                                    pendingUsers >
+                                    0
+                                        ? "pointer"
+                                        : "default",
+                            }}
+                        >
+
+                            <div className="stat-icon orange">
+                                ⏳
                             </div>
 
                             <div>
                                 <span>
-                                    Administrators
+                                    Pending Approval
                                 </span>
 
                                 <strong>
-                                    {
-                                        users.filter(
-                                            user =>
-                                                user.role ===
-                                                "Admin"
-                                        ).length
-                                    }
+                                    {pendingUsers}
                                 </strong>
                             </div>
 
                         </div>
+
+                        {/* APPROVED */}
 
                         <div className="system-stat-card">
 
                             <div className="stat-icon green">
-                                ⚙️
+                                ✓
                             </div>
 
                             <div>
                                 <span>
-                                    Engineers
+                                    Active Users
                                 </span>
 
                                 <strong>
-                                    {
-                                        users.filter(
-                                            user =>
-                                                user.role ===
-                                                "Engineer"
-                                        ).length
-                                    }
+                                    {approvedUsers}
                                 </strong>
                             </div>
 
                         </div>
 
+                        {/* REJECTED */}
+
                         <div className="system-stat-card">
 
-                            <div className="stat-icon orange">
-                                🔧
+                            <div className="stat-icon red">
+                                ✕
                             </div>
 
                             <div>
                                 <span>
-                                    Technicians
+                                    Rejected
                                 </span>
 
                                 <strong>
-                                    {
-                                        users.filter(
-                                            user =>
-                                                user.role ===
-                                                "Technician"
-                                        ).length
-                                    }
+                                    {rejectedUsers}
                                 </strong>
                             </div>
 
@@ -732,25 +1349,729 @@ const SystemAccess = () => {
 
                     </div>
 
-                    {/* USERS PANEL */}
+                    {/* =================================================
+                        ⭐ DEDICATED PENDING APPROVAL SECTION
+                    ================================================= */}
+
+                    {isAdmin && (
+                        <div
+                            className="pending-approvals-panel"
+                            style={{
+                                marginBottom:
+                                    "24px",
+                                background:
+                                    "#ffffff",
+                                border:
+                                    pendingUsers >
+                                    0
+                                        ? "2px solid #fed7aa"
+                                        : "1px solid #e2e8f0",
+                                borderRadius:
+                                    "16px",
+                                overflow:
+                                    "hidden",
+                                boxShadow:
+                                    "0 4px 16px rgba(15, 23, 42, 0.06)",
+                            }}
+                        >
+
+                            {/* HEADER */}
+
+                            <div
+                                style={{
+                                    padding:
+                                        "22px 24px",
+                                    display:
+                                        "flex",
+                                    alignItems:
+                                        "center",
+                                    justifyContent:
+                                        "space-between",
+                                    gap:
+                                        "20px",
+                                    background:
+                                        pendingUsers >
+                                        0
+                                            ? "#fffaf5"
+                                            : "#ffffff",
+                                    borderBottom:
+                                        "1px solid #eef2f7",
+                                }}
+                            >
+
+                                <div
+                                    style={{
+                                        display:
+                                            "flex",
+                                        alignItems:
+                                            "center",
+                                        gap:
+                                            "14px",
+                                    }}
+                                >
+
+                                    <div
+                                        style={{
+                                            width:
+                                                "48px",
+                                            height:
+                                                "48px",
+                                            borderRadius:
+                                                "12px",
+                                            display:
+                                                "flex",
+                                            alignItems:
+                                                "center",
+                                            justifyContent:
+                                                "center",
+                                            background:
+                                                pendingUsers >
+                                                0
+                                                    ? "#ffedd5"
+                                                    : "#ecfdf5",
+                                            fontSize:
+                                                "23px",
+                                        }}
+                                    >
+                                        {pendingUsers >
+                                        0
+                                            ? "⏳"
+                                            : "✓"}
+                                    </div>
+
+                                    <div>
+
+                                        <h2
+                                            style={{
+                                                margin:
+                                                    0,
+                                                fontSize:
+                                                    "19px",
+                                                color:
+                                                    "#0f172a",
+                                            }}
+                                        >
+                                            Pending Approvals
+                                        </h2>
+
+                                        <p
+                                            style={{
+                                                margin:
+                                                    "4px 0 0",
+                                                color:
+                                                    "#64748b",
+                                                fontSize:
+                                                    "13px",
+                                            }}
+                                        >
+                                            {pendingUsers >
+                                            0
+                                                ? "New user registrations are waiting for your approval."
+                                                : "There are no registrations waiting for approval."}
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+                                <div
+                                    style={{
+                                        minWidth:
+                                            "48px",
+                                        height:
+                                            "32px",
+                                        padding:
+                                            "0 12px",
+                                        borderRadius:
+                                            "18px",
+                                        display:
+                                            "flex",
+                                        alignItems:
+                                            "center",
+                                        justifyContent:
+                                            "center",
+                                        background:
+                                            pendingUsers >
+                                            0
+                                                ? "#fff7ed"
+                                                : "#ecfdf5",
+                                        color:
+                                            pendingUsers >
+                                            0
+                                                ? "#c2410c"
+                                                : "#15803d",
+                                        fontWeight:
+                                            700,
+                                        fontSize:
+                                            "12px",
+                                    }}
+                                >
+                                    {pendingUsers}{" "}
+                                    {pendingUsers ===
+                                    1
+                                        ? "Pending"
+                                        : "Pending"}
+                                </div>
+
+                            </div>
+
+                            {/* PENDING USERS */}
+
+                            {pendingUsers >
+                            0 ? (
+                                <div
+                                    style={{
+                                        overflowX:
+                                            "auto",
+                                    }}
+                                >
+
+                                    <table
+                                        style={{
+                                            width:
+                                                "100%",
+                                            borderCollapse:
+                                                "collapse",
+                                        }}
+                                    >
+
+                                        <thead>
+
+                                            <tr
+                                                style={{
+                                                    background:
+                                                        "#f8fafc",
+                                                }}
+                                            >
+
+                                                <th
+                                                    style={{
+                                                        padding:
+                                                            "13px 20px",
+                                                        textAlign:
+                                                            "left",
+                                                        color:
+                                                            "#64748b",
+                                                        fontSize:
+                                                            "11px",
+                                                        fontWeight:
+                                                            700,
+                                                    }}
+                                                >
+                                                    USER
+                                                </th>
+
+                                                <th
+                                                    style={{
+                                                        padding:
+                                                            "13px 20px",
+                                                        textAlign:
+                                                            "left",
+                                                        color:
+                                                            "#64748b",
+                                                        fontSize:
+                                                            "11px",
+                                                        fontWeight:
+                                                            700,
+                                                    }}
+                                                >
+                                                    EMAIL
+                                                </th>
+
+                                                <th
+                                                    style={{
+                                                        padding:
+                                                            "13px 20px",
+                                                        textAlign:
+                                                            "left",
+                                                        color:
+                                                            "#64748b",
+                                                        fontSize:
+                                                            "11px",
+                                                        fontWeight:
+                                                            700,
+                                                    }}
+                                                >
+                                                    REQUESTED ROLE
+                                                </th>
+
+                                                <th
+                                                    style={{
+                                                        padding:
+                                                            "13px 20px",
+                                                        textAlign:
+                                                            "left",
+                                                        color:
+                                                            "#64748b",
+                                                        fontSize:
+                                                            "11px",
+                                                        fontWeight:
+                                                            700,
+                                                    }}
+                                                >
+                                                    REGISTERED
+                                                </th>
+
+                                                <th
+                                                    style={{
+                                                        padding:
+                                                            "13px 20px",
+                                                        textAlign:
+                                                            "left",
+                                                        color:
+                                                            "#64748b",
+                                                        fontSize:
+                                                            "11px",
+                                                        fontWeight:
+                                                            700,
+                                                    }}
+                                                >
+                                                    STATUS
+                                                </th>
+
+                                                <th
+                                                    style={{
+                                                        padding:
+                                                            "13px 20px",
+                                                        textAlign:
+                                                            "left",
+                                                        color:
+                                                            "#64748b",
+                                                        fontSize:
+                                                            "11px",
+                                                        fontWeight:
+                                                            700,
+                                                    }}
+                                                >
+                                                    ACTIONS
+                                                </th>
+
+                                            </tr>
+
+                                        </thead>
+
+                                        <tbody>
+
+                                            {pendingUserList.map(
+                                                (user) => {
+                                                    const approveLoading =
+                                                        actionLoading ===
+                                                        `approve-${user._id}`;
+
+                                                    const rejectLoading =
+                                                        actionLoading ===
+                                                        `reject-${user._id}`;
+
+                                                    const rowLoading =
+                                                        approveLoading ||
+                                                        rejectLoading;
+
+                                                    return (
+                                                        <tr
+                                                            key={
+                                                                user._id
+                                                            }
+                                                            style={{
+                                                                borderTop:
+                                                                    "1px solid #eef2f7",
+                                                            }}
+                                                        >
+
+                                                            {/* USER */}
+
+                                                            <td
+                                                                style={{
+                                                                    padding:
+                                                                        "16px 20px",
+                                                                }}
+                                                            >
+
+                                                                <div
+                                                                    style={{
+                                                                        display:
+                                                                            "flex",
+                                                                        alignItems:
+                                                                            "center",
+                                                                        gap:
+                                                                            "11px",
+                                                                    }}
+                                                                >
+
+                                                                    <div
+                                                                        style={{
+                                                                            width:
+                                                                                "40px",
+                                                                            height:
+                                                                                "40px",
+                                                                            borderRadius:
+                                                                                "50%",
+                                                                            background:
+                                                                                "#2563eb",
+                                                                            color:
+                                                                                "#ffffff",
+                                                                            display:
+                                                                                "flex",
+                                                                            alignItems:
+                                                                                "center",
+                                                                            justifyContent:
+                                                                                "center",
+                                                                            fontWeight:
+                                                                                700,
+                                                                        }}
+                                                                    >
+                                                                        {user.name
+                                                                            ?.charAt(
+                                                                                0
+                                                                            )
+                                                                            ?.toUpperCase()}
+                                                                    </div>
+
+                                                                    <div>
+
+                                                                        <strong
+                                                                            style={{
+                                                                                display:
+                                                                                    "block",
+                                                                                color:
+                                                                                    "#0f172a",
+                                                                                fontSize:
+                                                                                    "14px",
+                                                                            }}
+                                                                        >
+                                                                            {
+                                                                                user.name
+                                                                            }
+                                                                        </strong>
+
+                                                                        <span
+                                                                            style={{
+                                                                                color:
+                                                                                    "#94a3b8",
+                                                                                fontSize:
+                                                                                    "12px",
+                                                                            }}
+                                                                        >
+                                                                            New registration
+                                                                        </span>
+
+                                                                    </div>
+
+                                                                </div>
+
+                                                            </td>
+
+                                                            {/* EMAIL */}
+
+                                                            <td
+                                                                style={{
+                                                                    padding:
+                                                                        "16px 20px",
+                                                                    color:
+                                                                        "#475569",
+                                                                    fontSize:
+                                                                        "13px",
+                                                                }}
+                                                            >
+                                                                {
+                                                                    user.email
+                                                                }
+                                                            </td>
+
+                                                            {/* ROLE */}
+
+                                                            <td
+                                                                style={{
+                                                                    padding:
+                                                                        "16px 20px",
+                                                                }}
+                                                            >
+
+                                                                <span
+                                                                    className={`role-badge ${getRoleClass(
+                                                                        user.role
+                                                                    )}`}
+                                                                >
+                                                                    {getRoleLabel(
+                                                                        user.role
+                                                                    )}
+                                                                </span>
+
+                                                            </td>
+
+                                                            {/* DATE */}
+
+                                                            <td
+                                                                style={{
+                                                                    padding:
+                                                                        "16px 20px",
+                                                                    color:
+                                                                        "#64748b",
+                                                                    fontSize:
+                                                                        "13px",
+                                                                }}
+                                                            >
+                                                                {formatDate(
+                                                                    user.createdAt
+                                                                )}
+                                                            </td>
+
+                                                            {/* STATUS */}
+
+                                                            <td
+                                                                style={{
+                                                                    padding:
+                                                                        "16px 20px",
+                                                                }}
+                                                            >
+
+                                                                <span
+                                                                    style={{
+                                                                        display:
+                                                                            "inline-flex",
+                                                                        alignItems:
+                                                                            "center",
+                                                                        gap:
+                                                                            "6px",
+                                                                        padding:
+                                                                            "6px 10px",
+                                                                        borderRadius:
+                                                                            "8px",
+                                                                        background:
+                                                                            "#fff7ed",
+                                                                        color:
+                                                                            "#c2410c",
+                                                                        fontSize:
+                                                                            "12px",
+                                                                        fontWeight:
+                                                                            700,
+                                                                    }}
+                                                                >
+
+                                                                    <span>
+                                                                        ●
+                                                                    </span>
+
+                                                                    Pending Approval
+
+                                                                </span>
+
+                                                            </td>
+
+                                                            {/* ACTIONS */}
+
+                                                            <td
+                                                                style={{
+                                                                    padding:
+                                                                        "16px 20px",
+                                                                }}
+                                                            >
+
+                                                                <div
+                                                                    style={{
+                                                                        display:
+                                                                            "flex",
+                                                                        gap:
+                                                                            "8px",
+                                                                        flexWrap:
+                                                                            "wrap",
+                                                                    }}
+                                                                >
+
+                                                                    <button
+                                                                        type="button"
+                                                                        disabled={
+                                                                            rowLoading
+                                                                        }
+                                                                        onClick={() =>
+                                                                            handleApprove(
+                                                                                user._id
+                                                                            )
+                                                                        }
+                                                                        style={{
+                                                                            border:
+                                                                                "none",
+                                                                            borderRadius:
+                                                                                "7px",
+                                                                            padding:
+                                                                                "9px 13px",
+                                                                            background:
+                                                                                "#dcfce7",
+                                                                            color:
+                                                                                "#15803d",
+                                                                            fontWeight:
+                                                                                700,
+                                                                            fontSize:
+                                                                                "12px",
+                                                                            cursor:
+                                                                                rowLoading
+                                                                                    ? "not-allowed"
+                                                                                    : "pointer",
+                                                                            opacity:
+                                                                                rowLoading
+                                                                                    ? 0.6
+                                                                                    : 1,
+                                                                        }}
+                                                                    >
+                                                                        {approveLoading
+                                                                            ? "Approving..."
+                                                                            : "✓ Approve"}
+                                                                    </button>
+
+                                                                    <button
+                                                                        type="button"
+                                                                        disabled={
+                                                                            rowLoading
+                                                                        }
+                                                                        onClick={() =>
+                                                                            handleReject(
+                                                                                user
+                                                                            )
+                                                                        }
+                                                                        style={{
+                                                                            border:
+                                                                                "none",
+                                                                            borderRadius:
+                                                                                "7px",
+                                                                            padding:
+                                                                                "9px 13px",
+                                                                            background:
+                                                                                "#fee2e2",
+                                                                            color:
+                                                                                "#dc2626",
+                                                                            fontWeight:
+                                                                                700,
+                                                                            fontSize:
+                                                                                "12px",
+                                                                            cursor:
+                                                                                rowLoading
+                                                                                    ? "not-allowed"
+                                                                                    : "pointer",
+                                                                            opacity:
+                                                                                rowLoading
+                                                                                    ? 0.6
+                                                                                    : 1,
+                                                                        }}
+                                                                    >
+                                                                        {rejectLoading
+                                                                            ? "Rejecting..."
+                                                                            : "✕ Reject"}
+                                                                    </button>
+
+                                                                </div>
+
+                                                            </td>
+
+                                                        </tr>
+                                                    );
+                                                }
+                                            )}
+
+                                        </tbody>
+
+                                    </table>
+
+                                </div>
+                            ) : (
+                                <div
+                                    style={{
+                                        textAlign:
+                                            "center",
+                                        padding:
+                                            "40px 20px",
+                                    }}
+                                >
+
+                                    <div
+                                        style={{
+                                            width:
+                                                "52px",
+                                            height:
+                                                "52px",
+                                            margin:
+                                                "0 auto 12px",
+                                            borderRadius:
+                                                "50%",
+                                            background:
+                                                "#dcfce7",
+                                            color:
+                                                "#16a34a",
+                                            display:
+                                                "flex",
+                                            alignItems:
+                                                "center",
+                                            justifyContent:
+                                                "center",
+                                            fontSize:
+                                                "24px",
+                                            fontWeight:
+                                                700,
+                                        }}
+                                    >
+                                        ✓
+                                    </div>
+
+                                    <h3
+                                        style={{
+                                            margin:
+                                                "0 0 6px",
+                                            color:
+                                                "#0f172a",
+                                        }}
+                                    >
+                                        No Pending Approvals
+                                    </h3>
+
+                                    <p
+                                        style={{
+                                            margin:
+                                                0,
+                                            color:
+                                                "#64748b",
+                                            fontSize:
+                                                "13px",
+                                        }}
+                                    >
+                                        All user
+                                        registrations
+                                        have been
+                                        processed.
+                                    </p>
+
+                                </div>
+                            )}
+
+                        </div>
+                    )}
+
+                    {/* =================================================
+                        USER MANAGEMENT
+                    ================================================= */}
+
                     <div className="system-users-panel">
 
                         {/* TOOLBAR */}
+
                         <div className="system-users-toolbar">
 
                             <div>
+
                                 <h2>
                                     User Management
                                 </h2>
 
                                 <p>
-                                    Manage registered PlantIQ users.
+                                    Manage registered
+                                    PlantIQ users,
+                                    roles and account
+                                    status.
                                 </p>
+
                             </div>
 
                             <div className="system-toolbar-actions">
 
                                 {/* SEARCH */}
+
                                 <div className="system-search">
 
                                     <span>
@@ -760,21 +2081,45 @@ const SystemAccess = () => {
                                     <input
                                         type="text"
                                         placeholder="Search users..."
-                                        value={search}
-                                        onChange={e =>
+                                        value={
+                                            search
+                                        }
+                                        onChange={(
+                                            event
+                                        ) =>
                                             setSearch(
-                                                e.target.value
+                                                event
+                                                    .target
+                                                    .value
                                             )
                                         }
                                     />
 
                                 </div>
 
+                                {/* REFRESH */}
+
+                                <button
+                                    type="button"
+                                    className="refresh-users-button"
+                                    onClick={
+                                        handleRefresh
+                                    }
+                                    disabled={
+                                        loading
+                                    }
+                                >
+                                    ↻ Refresh
+                                </button>
+
                                 {/* ADD USER */}
+
                                 <button
                                     type="button"
                                     className="add-user-button"
-                                    onClick={openAddUser}
+                                    onClick={
+                                        openAddUser
+                                    }
                                 >
                                     <span>
                                         +
@@ -787,9 +2132,101 @@ const SystemAccess = () => {
 
                         </div>
 
-                        {/* TABLE */}
-                        {loading ? (
+                        {/* =================================================
+                            STATUS FILTERS
+                        ================================================= */}
 
+                        <div className="system-status-filters">
+
+                            {STATUS_FILTERS.map(
+                                (status) => {
+
+                                    let count =
+                                        0;
+
+                                    if (
+                                        status ===
+                                        "all"
+                                    ) {
+                                        count =
+                                            totalUsers;
+                                    }
+
+                                    if (
+                                        status ===
+                                        "pending"
+                                    ) {
+                                        count =
+                                            pendingUsers;
+                                    }
+
+                                    if (
+                                        status ===
+                                        "approved"
+                                    ) {
+                                        count =
+                                            approvedUsers;
+                                    }
+
+                                    if (
+                                        status ===
+                                        "rejected"
+                                    ) {
+                                        count =
+                                            rejectedUsers;
+                                    }
+
+                                    return (
+                                        <button
+                                            key={
+                                                status
+                                            }
+                                            type="button"
+                                            className={
+                                                statusFilter ===
+                                                status
+                                                    ? "status-filter active"
+                                                    : "status-filter"
+                                            }
+                                            onClick={() =>
+                                                setStatusFilter(
+                                                    status
+                                                )
+                                            }
+                                        >
+
+                                            {status ===
+                                                "all" &&
+                                                "All Users"}
+
+                                            {status ===
+                                                "pending" &&
+                                                "⏳ Pending"}
+
+                                            {status ===
+                                                "approved" &&
+                                                "✓ Approved"}
+
+                                            {status ===
+                                                "rejected" &&
+                                                "✕ Rejected"}
+
+                                            <span>
+                                                {count}
+                                            </span>
+
+                                        </button>
+                                    );
+                                }
+                            )}
+
+                        </div>
+
+                        {/* =================================================
+                            USER TABLE
+                        ================================================= */}
+
+                        {loading ? (
                             <div className="system-loading">
 
                                 <div className="loading-spinner"></div>
@@ -799,9 +2236,8 @@ const SystemAccess = () => {
                                 </p>
 
                             </div>
-
-                        ) : filteredUsers.length === 0 ? (
-
+                        ) : filteredUsers.length ===
+                          0 ? (
                             <div className="system-empty">
 
                                 <div>
@@ -813,19 +2249,22 @@ const SystemAccess = () => {
                                 </h3>
 
                                 <p>
-                                    No users match your search.
+                                    No users match
+                                    your current
+                                    search or
+                                    status filter.
                                 </p>
 
                             </div>
-
                         ) : (
-
                             <div className="system-table-wrapper">
 
                                 <table className="system-users-table">
 
                                     <thead>
+
                                         <tr>
+
                                             <th>
                                                 USER
                                             </th>
@@ -845,13 +2284,15 @@ const SystemAccess = () => {
                                             <th>
                                                 ACTIONS
                                             </th>
+
                                         </tr>
+
                                     </thead>
 
                                     <tbody>
 
                                         {filteredUsers.map(
-                                            user => {
+                                            (user) => {
 
                                                 const isCurrentUser =
                                                     String(
@@ -859,6 +2300,11 @@ const SystemAccess = () => {
                                                     ) ===
                                                     String(
                                                         currentUserId
+                                                    );
+
+                                                const userStatus =
+                                                    getAccountStatus(
+                                                        user
                                                     );
 
                                                 const roleLoading =
@@ -869,28 +2315,55 @@ const SystemAccess = () => {
                                                     actionLoading ===
                                                     `delete-${user._id}`;
 
+                                                const approveLoading =
+                                                    actionLoading ===
+                                                    `approve-${user._id}`;
+
+                                                const rejectLoading =
+                                                    actionLoading ===
+                                                    `reject-${user._id}`;
+
+                                                const rowLoading =
+                                                    roleLoading ||
+                                                    deleteLoading ||
+                                                    approveLoading ||
+                                                    rejectLoading;
+
                                                 return (
                                                     <tr
                                                         key={
                                                             user._id
                                                         }
+                                                        className={
+                                                            userStatus ===
+                                                            "pending"
+                                                                ? "pending-user-row"
+                                                                : ""
+                                                        }
                                                     >
 
                                                         {/* USER */}
+
                                                         <td>
 
                                                             <div className="user-cell">
 
                                                                 <div className="user-avatar">
+
                                                                     {user.name
-                                                                        ?.charAt(0)
+                                                                        ?.charAt(
+                                                                            0
+                                                                        )
                                                                         ?.toUpperCase()}
+
                                                                 </div>
 
                                                                 <div>
 
                                                                     <strong>
-                                                                        {user.name}
+                                                                        {
+                                                                            user.name
+                                                                        }
                                                                     </strong>
 
                                                                     {isCurrentUser && (
@@ -906,15 +2379,19 @@ const SystemAccess = () => {
                                                         </td>
 
                                                         {/* EMAIL */}
+
                                                         <td>
 
                                                             <span className="user-email">
-                                                                {user.email}
+                                                                {
+                                                                    user.email
+                                                                }
                                                             </span>
 
                                                         </td>
 
                                                         {/* ROLE */}
+
                                                         <td>
 
                                                             <select
@@ -922,34 +2399,47 @@ const SystemAccess = () => {
                                                                     user.role
                                                                 )}`}
                                                                 value={
-                                                                    user.role ||
-                                                                    ""
+                                                                    String(
+                                                                        user.role || ""
+                                                                    )
+                                                                        .trim()
+                                                                        .toLowerCase()
+                                                                        .replace(
+                                                                            /-/g,
+                                                                            "_"
+                                                                        )
                                                                 }
                                                                 disabled={
                                                                     isCurrentUser ||
-                                                                    roleLoading ||
-                                                                    deleteLoading
+                                                                    rowLoading ||
+                                                                    !isAdmin
                                                                 }
-                                                                onChange={e =>
+                                                                onChange={(
+                                                                    event
+                                                                ) =>
                                                                     handleRoleChange(
-                                                                        user,
-                                                                        e.target.value
+                                                                        user._id,
+                                                                        event
+                                                                            .target
+                                                                            .value
                                                                     )
                                                                 }
                                                             >
 
                                                                 {ROLES.map(
-                                                                    role => (
+                                                                    (
+                                                                        role
+                                                                    ) => (
                                                                         <option
                                                                             key={
-                                                                                role
+                                                                                role.value
                                                                             }
                                                                             value={
-                                                                                role
+                                                                                role.value
                                                                             }
                                                                         >
                                                                             {
-                                                                                role
+                                                                                role.label
                                                                             }
                                                                         </option>
                                                                     )
@@ -960,51 +2450,146 @@ const SystemAccess = () => {
                                                         </td>
 
                                                         {/* ACCOUNT */}
+
                                                         <td>
 
-                                                            <span className="status-badge">
+                                                            <span
+                                                                className={`status-badge status-${userStatus}`}
+                                                            >
 
                                                                 <span className="status-dot"></span>
 
-                                                                Active
+                                                                {getStatusLabel(
+                                                                    userStatus
+                                                                )}
 
                                                             </span>
 
                                                         </td>
 
-                                                        {/* ACTION */}
+                                                        {/* ACTIONS */}
+
                                                         <td>
 
                                                             <div className="user-actions">
 
-                                                                {!isCurrentUser ? (
+                                                                {/* CURRENT USER */}
 
-                                                                    <button
-                                                                        type="button"
-                                                                        className="delete-user-button"
-                                                                        disabled={
-                                                                            roleLoading ||
-                                                                            deleteLoading
-                                                                        }
-                                                                        onClick={() =>
-                                                                            handleDelete(
-                                                                                user
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        {
-                                                                            deleteLoading
-                                                                                ? "Deleting..."
-                                                                                : "Delete"
-                                                                        }
-                                                                    </button>
-
-                                                                ) : (
-
+                                                                {isCurrentUser ? (
                                                                     <span className="current-user-label">
                                                                         Current user
                                                                     </span>
+                                                                ) : (
+                                                                    <>
 
+                                                                        {/* PENDING */}
+
+                                                                        {userStatus ===
+                                                                            "pending" &&
+                                                                            canApproveUsers && (
+                                                                                <>
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        className="approve-user-button"
+                                                                                        disabled={
+                                                                                            rowLoading
+                                                                                        }
+                                                                                        onClick={() =>
+                                                                                            handleApprove(
+                                                                                                user._id
+                                                                                            )
+                                                                                        }
+                                                                                    >
+                                                                                        {approveLoading
+                                                                                            ? "Approving..."
+                                                                                            : "✓ Approve"}
+                                                                                    </button>
+
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        className="reject-user-button"
+                                                                                        disabled={
+                                                                                            rowLoading
+                                                                                        }
+                                                                                        onClick={() =>
+                                                                                            handleReject(
+                                                                                                user
+                                                                                            )
+                                                                                        }
+                                                                                    >
+                                                                                        {rejectLoading
+                                                                                            ? "Rejecting..."
+                                                                                            : "✕ Reject"}
+                                                                                    </button>
+                                                                                </>
+                                                                            )}
+
+                                                                        {/* APPROVED */}
+
+                                                                        {userStatus ===
+                                                                            "approved" && (
+                                                                            <button
+                                                                                type="button"
+                                                                                className="delete-user-button"
+                                                                                disabled={
+                                                                                    rowLoading
+                                                                                }
+                                                                                onClick={() =>
+                                                                                    handleDelete(
+                                                                                        user
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                {deleteLoading
+                                                                                    ? "Deleting..."
+                                                                                    : "Delete"}
+                                                                            </button>
+                                                                        )}
+
+                                                                        {/* REJECTED */}
+
+                                                                        {userStatus ===
+                                                                            "rejected" && (
+                                                                            <>
+                                                                                {canApproveUsers && (
+                                                                                    <button
+                                                                                        type="button"
+                                                                                        className="approve-user-button"
+                                                                                        disabled={
+                                                                                            rowLoading
+                                                                                        }
+                                                                                        onClick={() =>
+                                                                                            handleApprove(
+                                                                                                user._id
+                                                                                            )
+                                                                                        }
+                                                                                    >
+                                                                                        {approveLoading
+                                                                                            ? "Approving..."
+                                                                                            : "✓ Approve"}
+                                                                                    </button>
+                                                                                )}
+
+                                                                                <button
+                                                                                    type="button"
+                                                                                    className="delete-user-button"
+                                                                                    disabled={
+                                                                                        rowLoading
+                                                                                    }
+                                                                                    onClick={() =>
+                                                                                        handleDelete(
+                                                                                            user
+                                                                                        )
+                                                                                    }
+                                                                                >
+                                                                                    {deleteLoading
+                                                                                        ? "Deleting..."
+                                                                                        : "Delete"}
+                                                                                </button>
+                                                                            </>
+                                                                        )}
+
+                                                                    </>
                                                                 )}
 
                                                             </div>
@@ -1021,132 +2606,160 @@ const SystemAccess = () => {
                                 </table>
 
                             </div>
-
                         )}
+
+                    </div>
+
+                    {/* =================================================
+                        ROLE PERMISSIONS
+                    ================================================= */}
+
+                    <div className="roles-information">
+
+                        <div className="roles-information-header">
+
+                            <div className="roles-info-icon">
+                                ℹ️
+                            </div>
+
+                            <div>
+
+                                <h3>
+                                    Role Permissions
+                                </h3>
+
+                                <p>
+                                    User permissions are
+                                    determined by their
+                                    assigned role.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                        <div className="role-permission-grid">
+
+                            <div className="permission-item">
+
+                                <span className="role-badge role-admin">
+                                    Admin
+                                </span>
+
+                                <p>
+                                    Full system access,
+                                    user management and
+                                    registration
+                                    approval.
+                                </p>
+
+                            </div>
+
+                            <div className="permission-item">
+
+                                <span className="role-badge role-operator">
+                                    Operator
+                                </span>
+
+                                <p>
+                                    System management
+                                    and user access
+                                    control.
+                                </p>
+
+                            </div>
+
+                            <div className="permission-item">
+
+                                <span className="role-badge role-manager">
+                                    Plant Manager
+                                </span>
+
+                                <p>
+                                    Plant-level
+                                    monitoring,
+                                    equipment and
+                                    operational
+                                    oversight.
+                                </p>
+
+                            </div>
+
+                            <div className="permission-item">
+
+                                <span className="role-badge role-engineer">
+                                    Engineer
+                                </span>
+
+                                <p>
+                                    Equipment,
+                                    monitoring and
+                                    predictions.
+                                </p>
+
+                            </div>
+
+                            <div className="permission-item">
+
+                                <span className="role-badge role-technician">
+                                    Technician
+                                </span>
+
+                                <p>
+                                    Equipment
+                                    monitoring and
+                                    maintenance.
+                                </p>
+
+                            </div>
+
+                            <div className="permission-item">
+
+                                <span className="role-badge role-viewer">
+                                    Viewer
+                                </span>
+
+                                <p>
+                                    Read-only access
+                                    to system
+                                    information.
+                                </p>
+
+                            </div>
+
+                        </div>
 
                     </div>
 
                 </>
             )}
 
-            {/* ROLE INFORMATION */}
-            <div className="roles-information">
-
-                <div className="roles-information-header">
-
-                    <div className="roles-info-icon">
-                        ℹ️
-                    </div>
-
-                    <div>
-
-                        <h3>
-                            Role Permissions
-                        </h3>
-
-                        <p>
-                            User permissions are determined
-                            by their assigned role.
-                        </p>
-
-                    </div>
-
-                </div>
-
-                <div className="role-permission-grid">
-
-                    <div className="permission-item">
-
-                        <span className="role-badge role-admin">
-                            Admin
-                        </span>
-
-                        <p>
-                            Full system access and user management.
-                        </p>
-
-                    </div>
-
-                    <div className="permission-item">
-
-                        <span className="role-badge role-operator">
-                            operator
-                        </span>
-
-                        <p>
-                            System management and user access control.
-                        </p>
-
-                    </div>
-
-                    <div className="permission-item">
-
-                        <span className="role-badge role-engineer">
-                            Engineer
-                        </span>
-
-                        <p>
-                            Equipment, monitoring and predictions.
-                        </p>
-
-                    </div>
-
-                    <div className="permission-item">
-
-                        <span className="role-badge role-technician">
-                            Technician
-                        </span>
-
-                        <p>
-                            Equipment monitoring and maintenance.
-                        </p>
-
-                    </div>
-
-                    <div className="permission-item">
-
-                        <span className="role-badge role-viewer">
-                            Viewer
-                        </span>
-
-                        <p>
-                            Read-only access to system information.
-                        </p>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            {/* =====================================================
+            {/* =================================================
                 ADD USER MODAL
-            ===================================================== */}
+            ================================================= */}
 
             {showAddUser && (
-
                 <div
                     className="add-user-modal-overlay"
-                    onMouseDown={e => {
-
+                    onMouseDown={(event) => {
                         if (
-                            e.target ===
-                            e.currentTarget
+                            event.target ===
+                            event.currentTarget
                         ) {
                             closeAddUser();
                         }
-
                     }}
                 >
 
                     <div
                         className="add-user-modal"
-                        onMouseDown={e =>
-                            e.stopPropagation()
+                        onMouseDown={(event) =>
+                            event.stopPropagation()
                         }
                     >
 
-                        {/* MODAL HEADER */}
+                        {/* HEADER */}
+
                         <div className="add-user-modal-header">
 
                             <div>
@@ -1160,7 +2773,9 @@ const SystemAccess = () => {
                                 </h2>
 
                                 <p>
-                                    Create a new PlantIQ user account.
+                                    Create a new
+                                    PlantIQ user
+                                    account.
                                 </p>
 
                             </div>
@@ -1168,8 +2783,12 @@ const SystemAccess = () => {
                             <button
                                 type="button"
                                 className="modal-close-button"
-                                onClick={closeAddUser}
-                                disabled={creatingUser}
+                                onClick={
+                                    closeAddUser
+                                }
+                                disabled={
+                                    creatingUser
+                                }
                             >
                                 ×
                             </button>
@@ -1177,6 +2796,7 @@ const SystemAccess = () => {
                         </div>
 
                         {/* FORM */}
+
                         <form
                             className="add-user-form"
                             onSubmit={
@@ -1185,6 +2805,7 @@ const SystemAccess = () => {
                         >
 
                             {/* NAME */}
+
                             <div className="form-group">
 
                                 <label>
@@ -1197,12 +2818,18 @@ const SystemAccess = () => {
                                     value={
                                         newUser.name
                                     }
-                                    onChange={e =>
+                                    onChange={(
+                                        event
+                                    ) =>
                                         setNewUser(
-                                            previous => ({
+                                            (
+                                                previous
+                                            ) => ({
                                                 ...previous,
                                                 name:
-                                                    e.target.value
+                                                    event
+                                                        .target
+                                                        .value,
                                             })
                                         )
                                     }
@@ -1215,6 +2842,7 @@ const SystemAccess = () => {
                             </div>
 
                             {/* EMAIL */}
+
                             <div className="form-group">
 
                                 <label>
@@ -1227,12 +2855,18 @@ const SystemAccess = () => {
                                     value={
                                         newUser.email
                                     }
-                                    onChange={e =>
+                                    onChange={(
+                                        event
+                                    ) =>
                                         setNewUser(
-                                            previous => ({
+                                            (
+                                                previous
+                                            ) => ({
                                                 ...previous,
                                                 email:
-                                                    e.target.value
+                                                    event
+                                                        .target
+                                                        .value,
                                             })
                                         )
                                     }
@@ -1244,6 +2878,7 @@ const SystemAccess = () => {
                             </div>
 
                             {/* PASSWORD */}
+
                             <div className="form-group">
 
                                 <label>
@@ -1256,12 +2891,18 @@ const SystemAccess = () => {
                                     value={
                                         newUser.password
                                     }
-                                    onChange={e =>
+                                    onChange={(
+                                        event
+                                    ) =>
                                         setNewUser(
-                                            previous => ({
+                                            (
+                                                previous
+                                            ) => ({
                                                 ...previous,
                                                 password:
-                                                    e.target.value
+                                                    event
+                                                        .target
+                                                        .value,
                                             })
                                         )
                                     }
@@ -1273,6 +2914,7 @@ const SystemAccess = () => {
                             </div>
 
                             {/* ROLE */}
+
                             <div className="form-group">
 
                                 <label>
@@ -1283,12 +2925,18 @@ const SystemAccess = () => {
                                     value={
                                         newUser.role
                                     }
-                                    onChange={e =>
+                                    onChange={(
+                                        event
+                                    ) =>
                                         setNewUser(
-                                            previous => ({
+                                            (
+                                                previous
+                                            ) => ({
                                                 ...previous,
                                                 role:
-                                                    e.target.value
+                                                    event
+                                                        .target
+                                                        .value,
                                             })
                                         )
                                     }
@@ -1298,16 +2946,18 @@ const SystemAccess = () => {
                                 >
 
                                     {ROLES.map(
-                                        role => (
+                                        (role) => (
                                             <option
                                                 key={
-                                                    role
+                                                    role.value
                                                 }
                                                 value={
-                                                    role
+                                                    role.value
                                                 }
                                             >
-                                                {role}
+                                                {
+                                                    role.label
+                                                }
                                             </option>
                                         )
                                     )}
@@ -1316,7 +2966,26 @@ const SystemAccess = () => {
 
                             </div>
 
+                            {/* INFO */}
+
+                            <div className="add-user-info">
+
+                                <span>
+                                    🛡️
+                                </span>
+
+                                <p>
+                                    Users created
+                                    directly by an
+                                    Admin are added
+                                    to the system
+                                    immediately.
+                                </p>
+
+                            </div>
+
                             {/* ACTIONS */}
+
                             <div className="add-user-form-actions">
 
                                 <button
@@ -1339,11 +3008,9 @@ const SystemAccess = () => {
                                         creatingUser
                                     }
                                 >
-
                                     {creatingUser
                                         ? "Creating..."
                                         : "Create User"}
-
                                 </button>
 
                             </div>
@@ -1353,7 +3020,6 @@ const SystemAccess = () => {
                     </div>
 
                 </div>
-
             )}
 
         </div>

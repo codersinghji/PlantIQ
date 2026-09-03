@@ -12,6 +12,17 @@ import dashboardRoutes from "./routes/dashboardRoutes.js";
 import monitoringRoutes from "./routes/monitoringRoutes.js";
 
 
+
+console.log(
+    "RESEND_API_KEY loaded:",
+    process.env.RESEND_API_KEY ? "YES" : "NO"
+);
+
+console.log(
+    "RESEND_FROM:",
+    process.env.RESEND_FROM || "NOT SET"
+);
+
 import connectDB from "./config/db.js";
 
 dotenv.config();

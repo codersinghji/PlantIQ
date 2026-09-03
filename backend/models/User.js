@@ -1,93 +1,193 @@
 import mongoose from "mongoose";
 
-const userSchema = new mongoose.Schema({
+/* =========================================
+   ROLE NORMALIZATION
+========================================= */
 
-    name: {
-        type: String,
-        required: true
-    },
+const normalizeRole = (role) => {
+    if (!role) return "operator";
 
-    email: {
-        type: String,
-        required: true,
-        unique: true
-    },
+    const normalized = role
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/[\s-]+/g, "_");
 
-    password: {
-        type: String,
-        required: true
-    },
+    const roleMap = {
+        admin: "admin",
+        engineer: "engineer",
+        technician: "technician",
+        viewer: "viewer",
+        operator: "operator",
 
-    role: {
-        type: String,
-        default: "Engineer"
-    },
+        "plant_manager": "plant_manager",
+        "plantmanager": "plant_manager",
 
-    otp: {
-        type: String,
-        default: null
-    },
+        // Support old/display-style values
+        "plant manager": "plant_manager"
+    };
 
-    otpExpire: {
-        type: Date,
-        default: null
-    },
+    return roleMap[normalized] || normalized;
+};
 
-    /* =========================================
-       USER SETTINGS
-    ========================================= */
 
-    settings: {
-        emailNotifications: {
-            type: Boolean,
-            default: true
-        },
+/* =========================================
+   USER SCHEMA
+========================================= */
 
-        equipmentAlerts: {
-            type: Boolean,
-            default: true
-        },
+const userSchema = new mongoose.Schema(
+    {
+        /* =========================================
+           BASIC USER INFORMATION
+        ========================================= */
 
-        predictionAlerts: {
-            type: Boolean,
-            default: true
-        },
-
-        systemNotifications: {
-            type: Boolean,
-            default: true
-        },
-
-        dashboardRefresh: {
+        name: {
             type: String,
-            default: "30"
+            required: true,
+            trim: true
         },
 
-        defaultPage: {
+        email: {
             type: String,
-            default: "/dashboard"
+            required: true,
+            unique: true,
+            lowercase: true,
+            trim: true
         },
 
-        appearance: {
+        password: {
             type: String,
-            enum: ["light", "dark", "system"],
-            default: "light"
+            required: true
         },
 
-        compactMode: {
-            type: Boolean,
-            default: false
+
+        /* =========================================
+           USER ROLE
+        ========================================= */
+
+        role: {
+            type: String,
+            enum: [
+                "admin",
+                "engineer",
+                "technician",
+                "viewer",
+                "operator",
+                "plant_manager"
+            ],
+            default: "operator",
+            set: normalizeRole
         },
 
-        soundAlerts: {
-            type: Boolean,
-            default: true
+
+        /* =========================================
+           ACCOUNT STATUS
+        ========================================= */
+
+        status: {
+            type: String,
+            enum: [
+                "pending",
+                "approved",
+                "rejected"
+            ],
+            default: "pending"
+        },
+
+
+        /* =========================================
+           PASSWORD RESET OTP
+        ========================================= */
+
+        otp: {
+            type: String,
+            default: null
+        },
+
+        otpExpire: {
+            type: Date,
+            default: null
+        },
+
+
+        /* =========================================
+           USER SETTINGS
+        ========================================= */
+
+        settings: {
+            emailNotifications: {
+                type: Boolean,
+                default: true
+            },
+
+            equipmentAlerts: {
+                type: Boolean,
+                default: true
+            },
+
+            predictionAlerts: {
+                type: Boolean,
+                default: true
+            },
+
+            systemNotifications: {
+                type: Boolean,
+                default: true
+            },
+
+            dashboardRefresh: {
+                type: String,
+                default: "30"
+            },
+
+            defaultPage: {
+                type: String,
+                default: "/dashboard"
+            },
+
+            appearance: {
+                type: String,
+                enum: [
+                    "light",
+                    "dark",
+                    "system"
+                ],
+                default: "light"
+            },
+
+            compactMode: {
+                type: Boolean,
+                default: false
+            },
+
+            soundAlerts: {
+                type: Boolean,
+                default: true
+            }
         }
+    },
+    {
+        timestamps: true
+    }
+);
+
+
+/* =========================================
+   NORMALIZE ROLE BEFORE VALIDATION/SAVE
+========================================= */
+
+userSchema.pre("validate", function (next) {
+    if (this.role) {
+        this.role = normalizeRole(this.role);
     }
 
-}, {
-    timestamps: true
+    next();
 });
+
+
+/* =========================================
+   MODEL
+========================================= */
 
 const User = mongoose.model("User", userSchema);
 

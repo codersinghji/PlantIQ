@@ -24,6 +24,8 @@ import ProtectedRoute from "./components/ProtectedRoute";
 
 import Monitoring from "./pages/Monitoring";
 
+import Register from "./pages/Register";
+
 
 
 
@@ -49,6 +51,10 @@ function App() {
                 <Route
                     path="/login"
                     element={<Login />}
+                />
+                <Route
+                     path="/register"
+                     element={<Register />}
                 />
 
                 <Route

@@ -1,11 +1,18 @@
 import User from "../models/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
+
+/* =========================================
+   RESEND
+========================================= */
+        const RESEND_FROM =
+    process.env.RESEND_FROM || "PlantIQ <onboarding@resend.dev>";
 
 /* =========================================
    DEFAULT SETTINGS
 ========================================= */
+
 const DEFAULT_SETTINGS = {
     emailNotifications: true,
     equipmentAlerts: true,
@@ -19,71 +26,10 @@ const DEFAULT_SETTINGS = {
 };
 
 /* =========================================
-   REGISTER
+   ALLOWED ROLES
 ========================================= */
 
-export const registerUser = async (req, res) => {
-    try {
-
-        const {
-            name,
-            email,
-            password,
-            role
-        } = req.body;
-
-
-        // =========================================
-        // VALIDATION
-        // =========================================
-
-        if (!name || !email || !password) {
-            return res.status(400).json({
-                success: false,
-                message: "Name, email and password are required"
-            });
-        }
-
-
-        if (password.length < 8) {
-            return res.status(400).json({
-                success: false,
-                message: "Password must be at least 8 characters"
-            });
-        }
-
-
-        // =========================================
-        // NORMALIZE EMAIL
-        // =========================================
-
-        const normalizedEmail =
-            email.trim().toLowerCase();
-
-
-        // =========================================
-        // CHECK EXISTING USER
-        // =========================================
-
-        const existingUser =
-            await User.findOne({
-                email: normalizedEmail
-            });
-
-
-        if (existingUser) {
-            return res.status(409).json({
-                success: false,
-                message: "User already exists"
-            });
-        }
-
-
-        // =========================================
-        // ALLOWED ROLES
-        // =========================================
-
-        const allowedRoles = [
+const ALLOWED_ROLES = [
     "admin",
     "engineer",
     "technician",
@@ -92,186 +38,320 @@ export const registerUser = async (req, res) => {
     "plant_manager"
 ];
 
-const normalizedRole = role?.trim().toLowerCase();
+/* =========================================
+   NORMALIZE ROLE
+========================================= */
 
-if (normalizedRole && !allowedRoles.includes(normalizedRole)) {
-    return res.status(400).json({
-        success: false,
-        message: `Invalid role. Allowed roles: ${allowedRoles.join(", ")}`
-    });
-}
-
-const userRole = normalizedRole || "operator";
-
-
-        // =========================================
-        // HASH PASSWORD
-        // =========================================
-
-        const hashedPassword =
-            await bcrypt.hash(
-                password,
-                10
-            );
-
-
-        // =========================================
-        // CREATE USER
-        // =========================================
-
-        const user = await User.create({
-
-            name: name.trim(),
-
-            email: normalizedEmail,
-
-            password: hashedPassword,
-
-            role: userRole
-
-        });
-
-
-        // =========================================
-        // RESPONSE
-        // =========================================
-
-        return res.status(201).json({
-
-            success: true,
-
-            message: "User Registered Successfully",
-
-            user: {
-
-                id: user._id,
-
-                _id: user._id,
-
-                name: user.name,
-
-                email: user.email,
-
-                role: user.role
-
-            }
-
-        });
-
-    } catch (error) {
-
-        console.error(
-            "Register Error:",
-            error
-        );
-
-        return res.status(500).json({
-
-            success: false,
-
-            message: error.message
-
-        });
+const normalizeRole = (role) => {
+    if (!role) {
+        return "operator";
     }
+
+    const normalized = role
+        .toString()
+        .trim()
+        .toLowerCase()
+        .replace(/[\s-]+/g, "_");
+
+    const roleMap = {
+        admin: "admin",
+        engineer: "engineer",
+        technician: "technician",
+        viewer: "viewer",
+        operator: "operator",
+
+        plant_manager: "plant_manager",
+        plantmanager: "plant_manager"
+    };
+
+    return roleMap[normalized] || normalized;
 };
 
-export const createUserByAdmin = async (req, res) => {
-    try {
-        const { name, email, password, role } = req.body;
+/* =========================================
+   NORMALIZE BOOLEAN
+========================================= */
 
-        // =========================================
-        // VALIDATION
-        // =========================================
+const normalizeBoolean = (value) => {
+    if (typeof value === "boolean") {
+        return value;
+    }
+
+    if (typeof value === "string") {
+        return value.toLowerCase() === "true";
+    }
+
+    if (typeof value === "number") {
+        return value === 1;
+    }
+
+    return Boolean(value);
+};
+
+/* =========================================
+   REGISTER USER
+   POST /api/auth/register
+========================================= */
+
+export const registerUser = async (req, res) => {
+    try {
+        const {
+            name,
+            email,
+            password,
+            role
+        } = req.body;
+
+        /* =====================================
+           VALIDATION
+        ===================================== */
 
         if (!name || !email || !password) {
             return res.status(400).json({
                 success: false,
-                message: "Name, email and password are required"
+                message:
+                    "Name, email and password are required"
             });
         }
 
         if (password.length < 8) {
             return res.status(400).json({
                 success: false,
-                message: "Password must be at least 8 characters"
+                message:
+                    "Password must be at least 8 characters"
             });
         }
 
-        const allowedRoles = [
-            "Admin",
-            "Engineer",
-            "Technician",
-            "Viewer",
-            "operator"
-        ];
-
-        const selectedRole = role || "Engineer";
-
-        if (!allowedRoles.includes(selectedRole)) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid user role"
-            });
-        }
-
-        // =========================================
-        // NORMALIZE EMAIL
-        // =========================================
+        /* =====================================
+           NORMALIZE EMAIL
+        ===================================== */
 
         const normalizedEmail =
             email.trim().toLowerCase();
 
-        // =========================================
-        // CHECK EXISTING USER
-        // =========================================
+        /* =====================================
+           CHECK EXISTING USER
+        ===================================== */
 
-        const existingUser = await User.findOne({
-            email: normalizedEmail
-        });
+        const existingUser =
+            await User.findOne({
+                email: normalizedEmail
+            });
 
         if (existingUser) {
             return res.status(409).json({
                 success: false,
-                message: "User already exists"
+                message:
+                    "User already exists"
             });
         }
 
-        // =========================================
-        // HASH PASSWORD
-        // =========================================
+        /* =====================================
+           NORMALIZE ROLE
+        ===================================== */
+
+        const normalizedRole =
+            normalizeRole(role);
+
+        if (!ALLOWED_ROLES.includes(normalizedRole)) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    `Invalid role. Allowed roles: ${ALLOWED_ROLES.join(", ")}`
+            });
+        }
+
+        /* =====================================
+           HASH PASSWORD
+        ===================================== */
 
         const hashedPassword =
             await bcrypt.hash(password, 10);
 
-        // =========================================
-        // CREATE USER
-        // =========================================
+        /* =====================================
+           CREATE USER
+        ===================================== */
 
         const user = await User.create({
             name: name.trim(),
+
             email: normalizedEmail,
+
             password: hashedPassword,
-            role: selectedRole
+
+            role: normalizedRole,
+
+            status: "pending",
+
+            settings: {
+                ...DEFAULT_SETTINGS
+            }
         });
 
-        // =========================================
-        // RESPONSE
-        // =========================================
+        /* =====================================
+           RESPONSE
+        ===================================== */
 
         return res.status(201).json({
             success: true,
-            message: "User created successfully",
+
+            message:
+                "Registration submitted successfully. Your account is waiting for Admin approval.",
+
             user: {
-                _id: user._id,
                 id: user._id,
+
+                _id: user._id,
+
                 name: user.name,
+
                 email: user.email,
-                role: user.role
+
+                role: user.role,
+
+                status: user.status
             }
         });
 
     } catch (error) {
+        console.error(
+            "Register Error:",
+            error
+        );
 
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+
+/* =========================================
+   CREATE USER BY ADMIN
+   POST /api/system-access/users
+========================================= */
+
+export const createUserByAdmin = async (req, res) => {
+    try {
+        const {
+            name,
+            email,
+            password,
+            role
+        } = req.body;
+
+        /* =====================================
+           VALIDATION
+        ===================================== */
+
+        if (!name || !email || !password) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Name, email and password are required"
+            });
+        }
+
+        if (password.length < 8) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Password must be at least 8 characters"
+            });
+        }
+
+        /* =====================================
+           NORMALIZE ROLE
+        ===================================== */
+
+        const selectedRole =
+            normalizeRole(role || "engineer");
+
+        if (!ALLOWED_ROLES.includes(selectedRole)) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    `Invalid role. Allowed roles: ${ALLOWED_ROLES.join(", ")}`
+            });
+        }
+
+        /* =====================================
+           NORMALIZE EMAIL
+        ===================================== */
+
+        const normalizedEmail =
+            email.trim().toLowerCase();
+
+        /* =====================================
+           CHECK EXISTING USER
+        ===================================== */
+
+        const existingUser =
+            await User.findOne({
+                email: normalizedEmail
+            });
+
+        if (existingUser) {
+            return res.status(409).json({
+                success: false,
+                message:
+                    "User already exists"
+            });
+        }
+
+        /* =====================================
+           HASH PASSWORD
+        ===================================== */
+
+        const hashedPassword =
+            await bcrypt.hash(password, 10);
+
+        /* =====================================
+           CREATE USER
+        ===================================== */
+
+        const user = await User.create({
+            name: name.trim(),
+
+            email: normalizedEmail,
+
+            password: hashedPassword,
+
+            role: selectedRole,
+
+            status: "approved",
+
+            settings: {
+                ...DEFAULT_SETTINGS
+            }
+        });
+
+        /* =====================================
+           RESPONSE
+        ===================================== */
+
+        return res.status(201).json({
+            success: true,
+
+            message:
+                "User created successfully and approved.",
+
+            user: {
+                _id: user._id,
+
+                id: user._id,
+
+                name: user.name,
+
+                email: user.email,
+
+                role: user.role,
+
+                status: user.status
+            }
+        });
+
+    } catch (error) {
         console.error(
             "Admin Create User Error:",
             error
@@ -279,93 +359,190 @@ export const createUserByAdmin = async (req, res) => {
 
         return res.status(500).json({
             success: false,
-            message: "Failed to create user"
+            message: error.message
         });
     }
 };
 
+
 /* =========================================
    LOGIN
+   POST /api/auth/login
 ========================================= */
 
 export const loginUser = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const {
+            email,
+            password
+        } = req.body;
+
+        /* =====================================
+           VALIDATION
+        ===================================== */
 
         if (!email || !password) {
             return res.status(400).json({
                 success: false,
-                message: "Email and password are required"
+                message:
+                    "Email and password are required"
             });
         }
 
-        const normalizedEmail = email.trim().toLowerCase();
+        /* =====================================
+           NORMALIZE EMAIL
+        ===================================== */
 
-        const user = await User.findOne({
-            email: normalizedEmail
-        });
+        const normalizedEmail =
+            email.trim().toLowerCase();
+
+        /* =====================================
+           FIND USER
+        ===================================== */
+
+        const user =
+            await User.findOne({
+                email: normalizedEmail
+            });
 
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message:
+                    "User not found"
             });
         }
+
+        /* =====================================
+           NORMALIZE OLD ROLE
+        ===================================== */
+
+        const normalizedRole =
+            normalizeRole(user.role);
+
+        if (
+            ALLOWED_ROLES.includes(normalizedRole) &&
+            user.role !== normalizedRole
+        ) {
+            user.role = normalizedRole;
+            await user.save();
+        }
+
+        /* =====================================
+           APPROVAL CHECK
+        ===================================== */
+
+        if (user.status === "pending") {
+            return res.status(403).json({
+                success: false,
+                message:
+                    "Your account is waiting for Admin approval."
+            });
+        }
+
+        if (user.status === "rejected") {
+            return res.status(403).json({
+                success: false,
+                message:
+                    "Your registration has been rejected by Admin."
+            });
+        }
+
+        /* =====================================
+           PASSWORD CHECK
+        ===================================== */
 
         if (!user.password) {
             return res.status(500).json({
                 success: false,
-                message: "User password is not configured"
+                message:
+                    "User password is not configured"
             });
         }
 
-        const isMatch = await bcrypt.compare(
-            password,
-            user.password
-        );
+        const isMatch =
+            await bcrypt.compare(
+                password,
+                user.password
+            );
 
         if (!isMatch) {
             return res.status(401).json({
                 success: false,
-                message: "Invalid Password"
+                message:
+                    "Invalid Password"
             });
         }
 
+        /* =====================================
+           JWT SECRET
+        ===================================== */
+
         if (!process.env.JWT_SECRET) {
-            console.error("JWT_SECRET is missing");
+            console.error(
+                "JWT_SECRET is missing"
+            );
 
             return res.status(500).json({
                 success: false,
-                message: "Server authentication configuration is missing"
+                message:
+                    "Server authentication configuration is missing"
             });
         }
 
-        const token = jwt.sign(
-            {
-                id: user._id.toString(),
-                email: user.email,
-                role: user.role
-            },
-            process.env.JWT_SECRET,
-            {
-                expiresIn: "7d"
-            }
-        );
+        /* =====================================
+           JWT
+        ===================================== */
+
+        const token =
+            jwt.sign(
+                {
+                    id: user._id.toString(),
+
+                    email: user.email,
+
+                    role: user.role
+                },
+
+                process.env.JWT_SECRET,
+
+                {
+                    expiresIn: "7d"
+                }
+            );
+
+        /* =====================================
+           RESPONSE
+        ===================================== */
 
         return res.status(200).json({
             success: true,
-            message: "Login Successful",
+
+            message:
+                "Login Successful",
+
             token,
+
             user: {
                 id: user._id,
+
+                _id: user._id,
+
                 name: user.name,
+
                 email: user.email,
-                role: user.role
+
+                role: user.role,
+
+                status: user.status
             }
         });
 
     } catch (error) {
-        console.error("Login Error:", error);
+        console.error(
+            "Login Error:",
+            error
+        );
 
         return res.status(500).json({
             success: false,
@@ -374,58 +551,77 @@ export const loginUser = async (req, res) => {
     }
 };
 
+
 /* =========================================
    VERIFY OTP
+   POST /api/auth/verify-otp
 ========================================= */
 
 export const verifyOTP = async (req, res) => {
     try {
-        const { email, otp } = req.body;
+        const {
+            email,
+            otp
+        } = req.body;
 
         if (!email || !otp) {
             return res.status(400).json({
                 success: false,
-                message: "Email and OTP are required"
+                message:
+                    "Email and OTP are required"
             });
         }
 
-        const normalizedEmail = email.trim().toLowerCase();
+        const normalizedEmail =
+            email.trim().toLowerCase();
 
-        const user = await User.findOne({
-            email: normalizedEmail
-        });
+        const user =
+            await User.findOne({
+                email: normalizedEmail
+            });
 
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message:
+                    "User not found"
             });
         }
 
-        if (!user.otp || String(user.otp) !== String(otp)) {
+        if (
+            !user.otp ||
+            String(user.otp) !== String(otp)
+        ) {
             return res.status(400).json({
                 success: false,
-                message: "Invalid OTP"
+                message:
+                    "Invalid OTP"
             });
         }
 
         if (
             !user.otpExpire ||
-            new Date(user.otpExpire).getTime() < Date.now()
+            new Date(user.otpExpire).getTime() <=
+                Date.now()
         ) {
             return res.status(400).json({
                 success: false,
-                message: "OTP has expired"
+                message:
+                    "OTP has expired"
             });
         }
 
         return res.status(200).json({
             success: true,
-            message: "OTP verified successfully"
+            message:
+                "OTP verified successfully"
         });
 
     } catch (error) {
-        console.error("Verify OTP Error:", error);
+        console.error(
+            "Verify OTP Error:",
+            error
+        );
 
         return res.status(500).json({
             success: false,
@@ -434,203 +630,267 @@ export const verifyOTP = async (req, res) => {
     }
 };
 
-/* =========================================
-   FORGOT PASSWORD
-========================================= */
 
 /* =========================================
    FORGOT PASSWORD
+   POST /api/auth/forgot-password
 ========================================= */
 
 export const forgotPassword = async (req, res) => {
-
     try {
+        const {
+            email
+        } = req.body;
 
-        console.log("=================================");
-        console.log("FORGOT PASSWORD CONTROLLER HIT");
-        console.log("BODY:", req.body);
-        console.log("=================================");
+        /* =====================================
+           EMAIL VALIDATION
+        ===================================== */
 
-        const { email } = req.body;
-
-        // Check email
         if (!email) {
-
-            console.log("❌ Email missing");
-
             return res.status(400).json({
                 success: false,
-                message: "Email is required"
+                message:
+                    "Email is required"
             });
         }
 
-        // Normalize email
+        /* =====================================
+           NORMALIZE EMAIL
+        ===================================== */
+
         const normalizedEmail =
             email.trim().toLowerCase();
 
-        console.log(
-            "🔎 Searching MongoDB for:",
-            normalizedEmail
-        );
+        /* =====================================
+           FIND USER
+        ===================================== */
 
-        // Find user
-        const user = await User.findOne({
-            email: normalizedEmail
-        });
+        const user =
+            await User.findOne({
+                email: normalizedEmail
+            });
 
-        console.log(
-            "👤 User found:",
-            user ? "YES" : "NO"
-        );
-
-        // User doesn't exist
         if (!user) {
-
-            console.log(
-                "❌ No user found with email:",
-                normalizedEmail
-            );
-
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message:
+                    "User not found"
             });
         }
 
-        // =========================================
-        // GENERATE OTP
-        // =========================================
+        /* =====================================
+           NORMALIZE OLD ROLE
+           
+           IMPORTANT:
+           This fixes old users such as:
+           "Admin"
+           "Engineer"
+           "Plant Manager"
+        ===================================== */
 
-        const otp = Math.floor(
-            100000 + Math.random() * 900000
-        ).toString();
+        const normalizedRole =
+            normalizeRole(user.role);
 
-        console.log("=================================");
-        console.log("📧 PASSWORD RESET OTP");
-        console.log("Email:", normalizedEmail);
-        console.log("OTP:", otp);
-        console.log("=================================");
+        if (!ALLOWED_ROLES.includes(normalizedRole)) {
+            return res.status(500).json({
+                success: false,
+                message:
+                    `User has invalid role: ${user.role}`
+            });
+        }
 
-        // =========================================
-        // SAVE OTP
-        // =========================================
+        user.role = normalizedRole;
 
-        user.otp = otp;
+        /* =====================================
+   GENERATE OTP
+===================================== */
 
-        user.otpExpire = new Date(
-            Date.now() + 10 * 60 * 1000
-        );
+const otp = Math.floor(
+    100000 + Math.random() * 900000
+).toString();
 
-        await user.save();
+console.log("Generated OTP:", otp);
 
-        console.log("✅ OTP saved in MongoDB");
 
-        // =========================================
-        // SEND EMAIL
-        // =========================================
+/* =====================================
+   SAVE OTP
+===================================== */
+
+const otpExpire = new Date(
+    Date.now() + 10 * 60 * 1000
+);
+
+await User.updateOne(
+    { _id: user._id },
+    {
+        $set: {
+            otp: otp,
+            otpExpire: otpExpire
+        }
+    }
+);
+
+console.log("OTP saved in MongoDB");
+         
+
+
+
+        /* =====================================
+           CHECK RESEND
+        ===================================== */
+          
+        if (!process.env.RESEND_API_KEY) {
+    console.log("RESEND_API_KEY is missing");
+    return res.status(500).json({
+        success: false,
+        message: "Email service is not configured"
+    });
+}
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+        
+
+        /* =====================================
+           SEND EMAIL
+        ===================================== */
+
+        const {
+            data,
+            error
+        } = await resend.emails.send({
+            from: RESEND_FROM,
+
+            to: [normalizedEmail],
+
+            subject:
+                "PlantIQ Password Reset OTP",
+
+            html: `
+                <div
+                    style="
+                        font-family: Arial, sans-serif;
+                        max-width: 600px;
+                        margin: auto;
+                        padding: 30px;
+                        border: 1px solid #e5e7eb;
+                        border-radius: 12px;
+                    "
+                >
+
+                    <h2
+                        style="
+                            color: #2563eb;
+                        "
+                    >
+                        PlantIQ
+                    </h2>
+
+                    <p>
+                        Hello ${user.name},
+                    </p>
+
+                    <p>
+                        We received a request to
+                        reset your PlantIQ password.
+                    </p>
+
+                    <p>
+                        Your password reset OTP is:
+                    </p>
+
+                    <div
+                        style="
+                            font-size: 32px;
+                            font-weight: bold;
+                            letter-spacing: 8px;
+                            color: #2563eb;
+                            margin: 25px 0;
+                        "
+                    >
+                        ${otp}
+                    </div>
+
+                    <p>
+                        This OTP will expire in
+                        <strong>10 minutes</strong>.
+                    </p>
+
+                    <p>
+                        If you did not request a
+                        password reset, you can
+                        safely ignore this email.
+                    </p>
+
+                    <hr />
+
+                    <p
+                        style="
+                            color: #6b7280;
+                            font-size: 13px;
+                        "
+                    >
+                        PlantIQ Machine Intelligence
+                    </p>
+
+                </div>
+            `
+        });
+
+        /* =====================================
+           RESEND ERROR
+        ===================================== */
+
+        if (error) {
+            console.error(
+                "Resend Error:",
+                error
+            );
+
+            return res.status(500).json({
+                success: false,
+                message:
+                    "Failed to send OTP email"
+            });
+        }
 
         console.log(
-            "EMAIL_USER:",
-            process.env.EMAIL_USER
+            "OTP EMAIL SENT SUCCESSFULLY"
         );
 
-        if (
-            process.env.EMAIL_USER &&
-            process.env.EMAIL_PASS
-        ) {
+        console.log(
+            "Resend ID:",
+            data?.id
+        );
 
-            console.log("📧 Creating Gmail transporter...");
-
-            const transporter =
-                nodemailer.createTransport({
-
-                    service: "gmail",
-
-                    auth: {
-                        user: process.env.EMAIL_USER,
-                        pass: process.env.EMAIL_PASS
-                    }
-
-                });
-
-            console.log("📧 Sending OTP email...");
-
-            await transporter.sendMail({
-
-                from: process.env.EMAIL_USER,
-
-                to: normalizedEmail,
-
-                subject: "PlantIQ Password Reset OTP",
-
-                html: `
-                    <div style="font-family: Arial, sans-serif;">
-
-                        <h2>PlantIQ</h2>
-
-                        <p>
-                            Your password reset OTP is:
-                        </p>
-
-                        <h1>${otp}</h1>
-
-                        <p>
-                            This OTP will expire in
-                            10 minutes.
-                        </p>
-
-                    </div>
-                `
-
-            });
-
-            console.log(
-                "✅ OTP EMAIL SENT SUCCESSFULLY"
-            );
-
-        } else {
-
-            console.log(
-                "⚠️ EMAIL_USER or EMAIL_PASS is missing"
-            );
-
-        }
-
-        // =========================================
-        // RESPONSE
-        // =========================================
+        /* =====================================
+           RESPONSE
+        ===================================== */
 
         return res.status(200).json({
-
             success: true,
-
-            message: "OTP sent successfully"
-
+            message:
+                "OTP sent successfully"
         });
 
     } catch (error) {
-
         console.error(
-            "❌ FORGOT PASSWORD ERROR:"
+            "FORGOT PASSWORD ERROR:",
+            error
         );
 
-        console.error(error);
-
         return res.status(500).json({
-
             success: false,
-
             message: error.message
-
         });
-
     }
-
 };
+
 
 /* =========================================
    RESET PASSWORD
+   POST /api/auth/reset-password
 ========================================= */
+
 export const resetPassword = async (req, res) => {
     try {
         const {
@@ -639,7 +899,11 @@ export const resetPassword = async (req, res) => {
             newPassword
         } = req.body;
 
-        if (!email || !otp || !newPassword) {
+        if (
+            !email ||
+            !otp ||
+            !newPassword
+        ) {
             return res.status(400).json({
                 success: false,
                 message:
@@ -655,55 +919,96 @@ export const resetPassword = async (req, res) => {
             });
         }
 
-        const normalizedEmail = email.trim().toLowerCase();
+        const normalizedEmail =
+            email.trim().toLowerCase();
 
-        const user = await User.findOne({
-            email: normalizedEmail
-        });
+        const user =
+            await User.findOne({
+                email: normalizedEmail
+            });
 
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message:
+                    "User not found"
             });
         }
 
-        if (!user.otp || String(user.otp) !== String(otp)) {
+        /* =====================================
+           NORMALIZE OLD ROLE BEFORE SAVE
+        ===================================== */
+
+        const normalizedRole =
+            normalizeRole(user.role);
+
+        if (!ALLOWED_ROLES.includes(normalizedRole)) {
+            return res.status(500).json({
+                success: false,
+                message:
+                    `User has invalid role: ${user.role}`
+            });
+        }
+
+        user.role = normalizedRole;
+
+        /* =====================================
+           CHECK OTP
+        ===================================== */
+
+        if (
+            !user.otp ||
+            String(user.otp) !== String(otp)
+        ) {
             return res.status(401).json({
                 success: false,
-                message: "Invalid OTP"
+                message:
+                    "Invalid OTP"
             });
         }
 
         if (
             !user.otpExpire ||
-            new Date(user.otpExpire).getTime() < Date.now()
+            new Date(user.otpExpire).getTime() <=
+                Date.now()
         ) {
             return res.status(400).json({
                 success: false,
-                message: "OTP Expired"
+                message:
+                    "OTP Expired"
             });
         }
 
-        const hashedPassword = await bcrypt.hash(
-            newPassword,
-            10
-        );
+        /* =====================================
+           HASH NEW PASSWORD
+        ===================================== */
 
-        user.password = hashedPassword;
+        const hashedPassword =
+            await bcrypt.hash(
+                newPassword,
+                10
+            );
+
+        user.password =
+            hashedPassword;
 
         user.otp = null;
+
         user.otpExpire = null;
 
         await user.save();
 
         return res.status(200).json({
             success: true,
-            message: "Password Reset Successfully"
+            message:
+                "Password Reset Successfully"
         });
 
     } catch (error) {
-        console.error("Reset Password Error:", error);
+        console.error(
+            "Reset Password Error:",
+            error
+        );
 
         return res.status(500).json({
             success: false,
@@ -711,24 +1016,25 @@ export const resetPassword = async (req, res) => {
         });
     }
 };
+
 
 /* =========================================
    LOGOUT
 ========================================= */
+
 export const logoutUser = async (req, res) => {
     try {
-        /*
-         * JWT authentication is stateless.
-         * The actual token is removed by the frontend.
-         */
-
         return res.status(200).json({
             success: true,
-            message: "Logout successful"
+            message:
+                "Logout successful"
         });
 
     } catch (error) {
-        console.error("Logout Error:", error);
+        console.error(
+            "Logout Error:",
+            error
+        );
 
         return res.status(500).json({
             success: false,
@@ -737,92 +1043,134 @@ export const logoutUser = async (req, res) => {
     }
 };
 
+
 /* =========================================
    GET PROFILE
+   GET /api/auth/profile
 ========================================= */
+
 export const getProfile = async (req, res) => {
     try {
-        const user = await User.findById(req.user.id)
-            .select("-password -otp -otpExpire");
+        const user =
+            await User.findById(
+                req.user.id
+            ).select(
+                "-password -otp -otpExpire"
+            );
 
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message:
+                    "User not found"
             });
         }
 
         return res.status(200).json({
             success: true,
-            message: "Profile fetched successfully",
+
+            message:
+                "Profile fetched successfully",
+
             user
         });
 
     } catch (error) {
-        console.error("Get Profile Error:", error);
+        console.error(
+            "Get Profile Error:",
+            error
+        );
 
         return res.status(500).json({
             success: false,
-            message: "Unable to fetch profile"
+            message:
+                "Unable to fetch profile"
         });
     }
 };
 
+
 /* =========================================
    UPDATE PROFILE
+   PUT /api/auth/profile
 ========================================= */
+
 export const updateProfile = async (req, res) => {
     try {
-        const { name, email } = req.body;
+        const {
+            name,
+            email
+        } = req.body;
 
         if (!name || !email) {
             return res.status(400).json({
                 success: false,
-                message: "Name and email are required"
+                message:
+                    "Name and email are required"
             });
         }
 
-        const normalizedEmail = email.trim().toLowerCase();
+        const normalizedEmail =
+            email.trim().toLowerCase();
 
-        const existingUser = await User.findOne({
-            email: normalizedEmail,
-            _id: { $ne: req.user.id }
-        });
+        const existingUser =
+            await User.findOne({
+                email: normalizedEmail,
+
+                _id: {
+                    $ne: req.user.id
+                }
+            });
 
         if (existingUser) {
             return res.status(409).json({
                 success: false,
-                message: "Email is already in use"
+                message:
+                    "Email is already in use"
             });
         }
 
-        const user = await User.findByIdAndUpdate(
-            req.user.id,
-            {
-                name: name.trim(),
-                email: normalizedEmail
-            },
-            {
-                new: true,
-                runValidators: true
-            }
-        ).select("-password -otp -otpExpire");
+        const user =
+            await User.findByIdAndUpdate(
+                req.user.id,
+
+                {
+                    name: name.trim(),
+
+                    email: normalizedEmail
+                },
+
+                {
+                    new: true,
+
+                    runValidators: true
+                }
+            ).select(
+                "-password -otp -otpExpire"
+            );
 
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message:
+                    "User not found"
             });
         }
 
         return res.status(200).json({
             success: true,
-            message: "Profile updated successfully",
+
+            message:
+                "Profile updated successfully",
+
             user
         });
 
     } catch (error) {
-        console.error("Update Profile Error:", error);
+        console.error(
+            "Update Profile Error:",
+            error
+        );
 
         return res.status(500).json({
             success: false,
@@ -831,19 +1179,26 @@ export const updateProfile = async (req, res) => {
     }
 };
 
+
 /* =========================================
    CHANGE PASSWORD
+   PUT /api/auth/change-password
 ========================================= */
+
 export const changePassword = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId =
+            req.user.id;
 
         const {
             currentPassword,
             newPassword
         } = req.body;
 
-        if (!currentPassword || !newPassword) {
+        if (
+            !currentPassword ||
+            !newPassword
+        ) {
             return res.status(400).json({
                 success: false,
                 message:
@@ -859,14 +1214,37 @@ export const changePassword = async (req, res) => {
             });
         }
 
-        const user = await User.findById(userId);
+        const user =
+            await User.findById(userId);
 
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message:
+                    "User not found"
             });
         }
+
+        /* =====================================
+           NORMALIZE OLD ROLE
+        ===================================== */
+
+        const normalizedRole =
+            normalizeRole(user.role);
+
+        if (!ALLOWED_ROLES.includes(normalizedRole)) {
+            return res.status(500).json({
+                success: false,
+                message:
+                    `User has invalid role: ${user.role}`
+            });
+        }
+
+        user.role = normalizedRole;
+
+        /* =====================================
+           CURRENT PASSWORD
+        ===================================== */
 
         const isCurrentPasswordCorrect =
             await bcrypt.compare(
@@ -882,6 +1260,10 @@ export const changePassword = async (req, res) => {
             });
         }
 
+        /* =====================================
+           CHECK SAME PASSWORD
+        ===================================== */
+
         const isSamePassword =
             await bcrypt.compare(
                 newPassword,
@@ -896,20 +1278,29 @@ export const changePassword = async (req, res) => {
             });
         }
 
-        user.password = await bcrypt.hash(
-            newPassword,
-            10
-        );
+        /* =====================================
+           HASH PASSWORD
+        ===================================== */
+
+        user.password =
+            await bcrypt.hash(
+                newPassword,
+                10
+            );
 
         await user.save();
 
         return res.status(200).json({
             success: true,
-            message: "Password changed successfully"
+            message:
+                "Password changed successfully"
         });
 
     } catch (error) {
-        console.error("Change Password Error:", error);
+        console.error(
+            "Change Password Error:",
+            error
+        );
 
         return res.status(500).json({
             success: false,
@@ -917,18 +1308,25 @@ export const changePassword = async (req, res) => {
         });
     }
 };
+
+
 /* =========================================
    GET SETTINGS
+   GET /api/auth/settings
 ========================================= */
+
 export const getSettings = async (req, res) => {
     try {
-        const user = await User.findById(req.user.id)
-            .select("settings");
+        const user =
+            await User.findById(
+                req.user.id
+            ).select("settings");
 
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message:
+                    "User not found"
             });
         }
 
@@ -948,26 +1346,37 @@ export const getSettings = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Get Settings Error:", error);
+        console.error(
+            "Get Settings Error:",
+            error
+        );
 
         return res.status(500).json({
             success: false,
-            message: "Failed to load settings"
+            message:
+                "Failed to load settings"
         });
     }
 };
 
+
 /* =========================================
    UPDATE SETTINGS
+   PUT /api/auth/settings
 ========================================= */
+
 export const updateSettings = async (req, res) => {
     try {
-        const user = await User.findById(req.user.id);
+        const user =
+            await User.findById(
+                req.user.id
+            );
 
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message:
+                    "User not found"
             });
         }
 
@@ -983,9 +1392,8 @@ export const updateSettings = async (req, res) => {
             soundAlerts
         } = req.body;
 
-
         /* =====================================
-           VALIDATION
+           ALLOWED VALUES
         ===================================== */
 
         const allowedPages = [
@@ -1009,6 +1417,9 @@ export const updateSettings = async (req, res) => {
             "300"
         ];
 
+        /* =====================================
+           VALIDATE DEFAULT PAGE
+        ===================================== */
 
         if (
             defaultPage !== undefined &&
@@ -1016,21 +1427,31 @@ export const updateSettings = async (req, res) => {
         ) {
             return res.status(400).json({
                 success: false,
-                message: "Invalid default page"
+                message:
+                    "Invalid default page"
             });
         }
 
+        /* =====================================
+           VALIDATE APPEARANCE
+        ===================================== */
 
         if (
             appearance !== undefined &&
-            !allowedAppearance.includes(appearance)
+            !allowedAppearance.includes(
+                appearance
+            )
         ) {
             return res.status(400).json({
                 success: false,
-                message: "Invalid appearance setting"
+                message:
+                    "Invalid appearance setting"
             });
         }
 
+        /* =====================================
+           VALIDATE REFRESH
+        ===================================== */
 
         if (
             dashboardRefresh !== undefined &&
@@ -1045,7 +1466,6 @@ export const updateSettings = async (req, res) => {
             });
         }
 
-
         /* =====================================
            CURRENT SETTINGS
         ===================================== */
@@ -1055,33 +1475,41 @@ export const updateSettings = async (req, res) => {
                 ? user.settings.toObject()
                 : user.settings || {};
 
-
         /* =====================================
-           UPDATE
+           UPDATE SETTINGS
         ===================================== */
 
         user.settings = {
             ...DEFAULT_SETTINGS,
+
             ...currentSettings,
 
             ...(emailNotifications !== undefined && {
                 emailNotifications:
-                    Boolean(emailNotifications)
+                    normalizeBoolean(
+                        emailNotifications
+                    )
             }),
 
             ...(equipmentAlerts !== undefined && {
                 equipmentAlerts:
-                    Boolean(equipmentAlerts)
+                    normalizeBoolean(
+                        equipmentAlerts
+                    )
             }),
 
             ...(predictionAlerts !== undefined && {
                 predictionAlerts:
-                    Boolean(predictionAlerts)
+                    normalizeBoolean(
+                        predictionAlerts
+                    )
             }),
 
             ...(systemNotifications !== undefined && {
                 systemNotifications:
-                    Boolean(systemNotifications)
+                    normalizeBoolean(
+                        systemNotifications
+                    )
             }),
 
             ...(dashboardRefresh !== undefined && {
@@ -1099,33 +1527,57 @@ export const updateSettings = async (req, res) => {
 
             ...(compactMode !== undefined && {
                 compactMode:
-                    Boolean(compactMode)
+                    normalizeBoolean(
+                        compactMode
+                    )
             }),
 
             ...(soundAlerts !== undefined && {
                 soundAlerts:
-                    Boolean(soundAlerts)
+                    normalizeBoolean(
+                        soundAlerts
+                    )
             })
         };
 
+        /* =====================================
+           NORMALIZE ROLE BEFORE SAVE
+        ===================================== */
+
+        const normalizedRole =
+            normalizeRole(user.role);
+
+        if (!ALLOWED_ROLES.includes(normalizedRole)) {
+            return res.status(500).json({
+                success: false,
+                message:
+                    `User has invalid role: ${user.role}`
+            });
+        }
+
+        user.role = normalizedRole;
 
         await user.save();
-
 
         const settings =
             user.settings?.toObject
                 ? user.settings.toObject()
                 : user.settings;
 
-
         return res.status(200).json({
             success: true,
-            message: "Settings updated successfully",
+
+            message:
+                "Settings updated successfully",
+
             settings
         });
 
     } catch (error) {
-        console.error("Update Settings Error:", error);
+        console.error(
+            "Update Settings Error:",
+            error
+        );
 
         return res.status(500).json({
             success: false,
@@ -1134,17 +1586,23 @@ export const updateSettings = async (req, res) => {
     }
 };
 
+
 /* =========================================
    RESET SETTINGS
 ========================================= */
+
 export const resetSettings = async (req, res) => {
     try {
-        const user = await User.findById(req.user.id);
+        const user =
+            await User.findById(
+                req.user.id
+            );
 
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message:
+                    "User not found"
             });
         }
 
@@ -1152,27 +1610,46 @@ export const resetSettings = async (req, res) => {
             ...DEFAULT_SETTINGS
         };
 
+        /* Normalize old roles too */
+        const normalizedRole =
+            normalizeRole(user.role);
+
+        if (!ALLOWED_ROLES.includes(normalizedRole)) {
+            return res.status(500).json({
+                success: false,
+                message:
+                    `User has invalid role: ${user.role}`
+            });
+        }
+
+        user.role = normalizedRole;
+
         await user.save();
 
         return res.status(200).json({
             success: true,
-            message: "Settings reset successfully",
+
+            message:
+                "Settings reset successfully",
+
             settings: {
                 ...DEFAULT_SETTINGS
             }
         });
 
     } catch (error) {
-        console.error("Reset Settings Error:", error);
+        console.error(
+            "Reset Settings Error:",
+            error
+        );
 
         return res.status(500).json({
             success: false,
-            message: "Failed to reset settings"
+            message:
+                "Failed to reset settings"
         });
     }
 };
-
-
 
 
 /* =========================================
@@ -1182,9 +1659,14 @@ export const resetSettings = async (req, res) => {
 
 export const getAllUsers = async (req, res) => {
     try {
-        const users = await User.find()
-            .select("-password -otp -otpExpire")
-            .sort({ createdAt: -1 });
+        const users =
+            await User.find()
+                .select(
+                    "-password -otp -otpExpire"
+                )
+                .sort({
+                    createdAt: -1
+                });
 
         return res.status(200).json({
             success: true,
@@ -1192,11 +1674,15 @@ export const getAllUsers = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Get All Users Error:", error);
+        console.error(
+            "Get All Users Error:",
+            error
+        );
 
         return res.status(500).json({
             success: false,
-            message: "Failed to fetch users"
+            message:
+                "Failed to fetch users"
         });
     }
 };
@@ -1209,52 +1695,108 @@ export const getAllUsers = async (req, res) => {
 
 export const updateUserRole = async (req, res) => {
     try {
+        const {
+            id
+        } = req.params;
 
-        const { id } = req.params;
-        const { role } = req.body;
+        const {
+            role
+        } = req.body;
 
-        const allowedRoles = [
-            "Admin",
-            "Engineer",
-            "Technician",
-            "Viewer"
-        ];
-
-        if (!allowedRoles.includes(role)) {
+        if (!id) {
             return res.status(400).json({
                 success: false,
-                message: "Invalid role"
+                message:
+                    "User ID is required"
             });
         }
 
-        const user = await User.findByIdAndUpdate(
-            id,
-            { role },
-            {
-                new: true,
-                runValidators: true
-            }
-        ).select("-password -otp -otpExpire");
+        if (!role) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Role is required"
+            });
+        }
+
+        /* =====================================
+           NORMALIZE ROLE
+        ===================================== */
+
+        const normalizedRole =
+            normalizeRole(role);
+
+        if (!ALLOWED_ROLES.includes(normalizedRole)) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    `Invalid role: ${normalizedRole}`
+            });
+        }
+
+        /* =====================================
+           FIND USER
+        ===================================== */
+
+        const user =
+            await User.findById(id);
 
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message:
+                    "User not found"
             });
         }
 
+        /* =====================================
+           UPDATE
+        ===================================== */
+
+        user.role = normalizedRole;
+
+        const updatedUser =
+            await user.save();
+
+        /* =====================================
+           RESPONSE
+        ===================================== */
+
         return res.status(200).json({
             success: true,
-            message: "User role updated successfully",
-            user
+
+            message:
+                `${updatedUser.name}'s role changed to ${updatedUser.role}`,
+
+            user: {
+                _id: updatedUser._id,
+
+                id: updatedUser._id,
+
+                name: updatedUser.name,
+
+                email: updatedUser.email,
+
+                role: updatedUser.role,
+
+                status: updatedUser.status
+            }
         });
 
     } catch (error) {
-        console.error("Update User Role Error:", error);
+        console.error(
+            "Update Role Error:",
+            error
+        );
 
         return res.status(500).json({
             success: false,
-            message: "Failed to update user role"
+
+            message:
+                "Failed to update user role",
+
+            error:
+                error.message
         });
     }
 };
@@ -1267,37 +1809,299 @@ export const updateUserRole = async (req, res) => {
 
 export const deleteUser = async (req, res) => {
     try {
+        const {
+            id
+        } = req.params;
 
-        const { id } = req.params;
+        /* =====================================
+           PREVENT SELF DELETE
+        ===================================== */
 
-        // Prevent admin from deleting himself
-        if (id === req.user.id) {
+        if (
+            id === req.user.id
+        ) {
             return res.status(400).json({
                 success: false,
-                message: "You cannot delete your own account"
+                message:
+                    "You cannot delete your own account"
             });
         }
 
-        const user = await User.findByIdAndDelete(id);
+        const user =
+            await User.findByIdAndDelete(id);
 
         if (!user) {
             return res.status(404).json({
                 success: false,
-                message: "User not found"
+                message:
+                    "User not found"
             });
         }
 
         return res.status(200).json({
             success: true,
-            message: "User deleted successfully"
+            message:
+                "User deleted successfully"
         });
 
     } catch (error) {
-        console.error("Delete User Error:", error);
+        console.error(
+            "Delete User Error:",
+            error
+        );
 
         return res.status(500).json({
             success: false,
-            message: "Failed to delete user"
+            message:
+                "Failed to delete user"
+        });
+    }
+};
+
+
+/* =========================================
+   GET PENDING USERS
+   GET /api/system-access/pending
+========================================= */
+
+export const getPendingUsers = async (req, res) => {
+    try {
+        const users =
+            await User.find({
+                status: "pending"
+            })
+                .select(
+                    "-password -otp -otpExpire"
+                )
+                .sort({
+                    createdAt: -1
+                });
+
+        return res.status(200).json({
+            success: true,
+            users
+        });
+
+    } catch (error) {
+        console.error(
+            "Get Pending Users Error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+            message:
+                "Failed to fetch pending users"
+        });
+    }
+};
+
+
+/* =========================================
+   APPROVE USER
+   PUT /api/auth/users/:id/approve
+========================================= */
+
+export const approveUser = async (req, res) => {
+    try {
+        const {
+            id
+        } = req.params;
+
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "User ID is required"
+            });
+        }
+
+        const user =
+            await User.findById(id);
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message:
+                    "User not found"
+            });
+        }
+
+        if (
+            user.status !== "pending"
+        ) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    `User is already ${user.status}`
+            });
+        }
+
+        /* =====================================
+           NORMALIZE ROLE
+        ===================================== */
+
+        const normalizedRole =
+            normalizeRole(user.role);
+
+        if (!ALLOWED_ROLES.includes(normalizedRole)) {
+            return res.status(500).json({
+                success: false,
+                message:
+                    `User has invalid role: ${user.role}`
+            });
+        }
+
+        user.role = normalizedRole;
+
+        /* =====================================
+           APPROVE
+        ===================================== */
+
+        user.status = "approved";
+
+        await user.save();
+
+        return res.status(200).json({
+            success: true,
+
+            message:
+                `${user.name} approved successfully`,
+
+            user: {
+                _id: user._id,
+
+                id: user._id,
+
+                name: user.name,
+
+                email: user.email,
+
+                role: user.role,
+
+                status: user.status
+            }
+        });
+
+    } catch (error) {
+        console.error(
+            "Approve User Error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+
+            message:
+                "Failed to approve user",
+
+            error:
+                error.message
+        });
+    }
+};
+
+
+/* =========================================
+   REJECT USER
+   PUT /api/auth/users/:id/reject
+========================================= */
+
+export const rejectUser = async (req, res) => {
+    try {
+        const {
+            id
+        } = req.params;
+
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "User ID is required"
+            });
+        }
+
+        const user =
+            await User.findById(id);
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message:
+                    "User not found"
+            });
+        }
+
+        if (
+            user.status !== "pending"
+        ) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    `User is already ${user.status}`
+            });
+        }
+
+        /* =====================================
+           NORMALIZE ROLE
+        ===================================== */
+
+        const normalizedRole =
+            normalizeRole(user.role);
+
+        if (!ALLOWED_ROLES.includes(normalizedRole)) {
+            return res.status(500).json({
+                success: false,
+                message:
+                    `User has invalid role: ${user.role}`
+            });
+        }
+
+        user.role = normalizedRole;
+
+        /* =====================================
+           REJECT
+        ===================================== */
+
+        user.status = "rejected";
+
+        await user.save();
+
+        return res.status(200).json({
+            success: true,
+
+            message:
+                `${user.name}'s registration rejected`,
+
+            user: {
+                _id: user._id,
+
+                id: user._id,
+
+                name: user.name,
+
+                email: user.email,
+
+                role: user.role,
+
+                status: user.status
+            }
+        });
+
+    } catch (error) {
+        console.error(
+            "Reject User Error:",
+            error
+        );
+
+        return res.status(500).json({
+            success: false,
+
+            message:
+                "Failed to reject user",
+
+            error:
+                error.message
         });
     }
 };

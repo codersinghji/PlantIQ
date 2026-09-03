@@ -17,27 +17,27 @@ function Login() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
-    // =========================
+    // =========================================
     // HANDLE INPUT
-    // =========================
+    // =========================================
 
     const handleChange = (e) => {
 
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
+        const { name, value } = e.target;
 
-        // Remove error while typing
+        setFormData((prev) => ({
+            ...prev,
+            [name]: value
+        }));
+
         if (error) {
             setError("");
         }
     };
 
-
-    // =========================
+    // =========================================
     // LOGIN
-    // =========================
+    // =========================================
 
     const handleSubmit = async (e) => {
 
@@ -45,7 +45,7 @@ function Login() {
 
         setError("");
 
-        if (!formData.email || !formData.password) {
+        if (!formData.email.trim() || !formData.password) {
             setError("Please enter email and password");
             return;
         }
@@ -56,12 +56,18 @@ function Login() {
 
             const response = await API.post(
                 "/auth/login",
-                formData
+                {
+                    email: formData.email.trim(),
+                    password: formData.password
+                }
             );
 
             console.log("Login Success:", response.data);
 
-            // Save JWT token
+            // =====================================
+            // SAVE TOKEN
+            // =====================================
+
             if (response.data.token) {
 
                 localStorage.setItem(
@@ -70,7 +76,10 @@ function Login() {
                 );
             }
 
-            // Save user
+            // =====================================
+            // SAVE USER
+            // =====================================
+
             if (response.data.user) {
 
                 localStorage.setItem(
@@ -79,12 +88,22 @@ function Login() {
                 );
             }
 
-            // Go to dashboard
+            // =====================================
+            // DASHBOARD
+            // =====================================
+
             navigate("/dashboard");
 
         } catch (error) {
 
             console.error("Login Error:", error);
+
+            // Remove old authentication data
+            if (error.response?.status === 403) {
+
+                localStorage.removeItem("token");
+                localStorage.removeItem("user");
+            }
 
             setError(
                 error.response?.data?.message ||
@@ -97,6 +116,17 @@ function Login() {
         }
     };
 
+    // =========================================
+    // GO TO REGISTER
+    // =========================================
+
+    const goToRegister = () => {
+        navigate("/register");
+    };
+
+    // =========================================
+    // RENDER
+    // =========================================
 
     return (
 
@@ -108,8 +138,6 @@ function Login() {
 
             <section className="login-left">
 
-                {/* Brand */}
-
                 <div className="login-brand">
 
                     <h1>PlantIQ</h1>
@@ -119,9 +147,6 @@ function Login() {
                     </p>
 
                 </div>
-
-
-                {/* Main Content */}
 
                 <div className="login-content">
 
@@ -140,9 +165,6 @@ function Login() {
                         data and predict machine failures using
                         intelligent predictive maintenance.
                     </p>
-
-
-                    {/* Features */}
 
                     <div className="login-features">
 
@@ -166,7 +188,6 @@ function Login() {
 
                         </div>
 
-
                         <div className="login-feature">
 
                             <div className="feature-check">
@@ -186,7 +207,6 @@ function Login() {
                             </div>
 
                         </div>
-
 
                         <div className="login-feature">
 
@@ -212,9 +232,6 @@ function Login() {
 
                 </div>
 
-
-                {/* Footer */}
-
                 <div className="login-footer">
                     © 2026 PlantIQ. All rights reserved.
                 </div>
@@ -229,8 +246,6 @@ function Login() {
             <section className="login-right">
 
                 <div className="login-card">
-
-                    {/* Header */}
 
                     <div className="login-card-header">
 
@@ -249,7 +264,7 @@ function Login() {
                     </div>
 
 
-                    {/* Error */}
+                    {/* ERROR */}
 
                     {error && (
 
@@ -260,7 +275,7 @@ function Login() {
                     )}
 
 
-                    {/* Form */}
+                    {/* LOGIN FORM */}
 
                     <form
                         className="login-form"
@@ -283,6 +298,7 @@ function Login() {
                                 value={formData.email}
                                 onChange={handleChange}
                                 autoComplete="email"
+                                disabled={loading}
                             />
 
                         </div>
@@ -304,16 +320,13 @@ function Login() {
                                     onClick={() =>
                                         navigate("/forgot-password")
                                     }
+                                    disabled={loading}
                                 >
                                     Forgot password?
                                 </button>
 
                             </div>
 
-
-                            {/* IMPORTANT:
-                                Eye + Input are inside this wrapper
-                            */}
 
                             <div className="login-password-wrapper">
 
@@ -329,10 +342,8 @@ function Login() {
                                     value={formData.password}
                                     onChange={handleChange}
                                     autoComplete="current-password"
+                                    disabled={loading}
                                 />
-
-
-                                {/* EYE BUTTON */}
 
                                 <button
                                     type="button"
@@ -347,12 +358,11 @@ function Login() {
                                             ? "Hide password"
                                             : "Show password"
                                     }
+                                    disabled={loading}
                                 >
 
                                     {showPassword ? (
 
-                                        /* Eye OFF */
-
                                         <svg
                                             viewBox="0 0 24 24"
                                             fill="none"
@@ -361,27 +371,19 @@ function Login() {
                                             strokeLinecap="round"
                                             strokeLinejoin="round"
                                         >
-                                            <path
-                                                d="M3 3l18 18"
-                                            />
 
-                                            <path
-                                                d="M10.58 10.58a2 2 0 0 0 2.83 2.83"
-                                            />
+                                            <path d="M3 3l18 18" />
 
-                                            <path
-                                                d="M9.88 4.24A10.7 10.7 0 0 1 12 4c5 0 8.27 4 9 8a13.4 13.4 0 0 1-2.05 4.24"
-                                            />
+                                            <path d="M10.58 10.58a2 2 0 0 0 2.83 2.83" />
 
-                                            <path
-                                                d="M6.61 6.61C4.62 7.94 3.35 10 3 12c.73 4 4 8 9 8a10.7 10.7 0 0 0 3.88-.73"
-                                            />
+                                            <path d="M9.88 4.24A10.7 10.7 0 0 1 12 4c5 0 8.27 4 9 8a13.4 13.4 0 0 1-2.05 4.24" />
+
+                                            <path d="M6.61 6.61C4.62 7.94 3.35 10 3 12c.73 4 4 8 9 8a10.7 10.7 0 0 0 3.88-.73" />
+
                                         </svg>
 
                                     ) : (
 
-                                        /* Eye ON */
-
                                         <svg
                                             viewBox="0 0 24 24"
                                             fill="none"
@@ -390,6 +392,7 @@ function Login() {
                                             strokeLinecap="round"
                                             strokeLinejoin="round"
                                         >
+
                                             <path
                                                 d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"
                                             />
@@ -399,6 +402,7 @@ function Login() {
                                                 cy="12"
                                                 r="3"
                                             />
+
                                         </svg>
 
                                     )}
@@ -428,7 +432,29 @@ function Login() {
                     </form>
 
 
-                    {/* Divider */}
+                    {/* =====================================
+                        REGISTER
+                    ====================================== */}
+
+                    <div className="login-register">
+
+                        <span>
+                            Don't have an account?
+                        </span>
+
+                        <button
+                            type="button"
+                            className="login-register-link"
+                            onClick={goToRegister}
+                            disabled={loading}
+                        >
+                            Create Account
+                        </button>
+
+                    </div>
+
+
+                    {/* DIVIDER */}
 
                     <div className="login-divider">
 
@@ -439,7 +465,7 @@ function Login() {
                     </div>
 
 
-                    {/* Security Box */}
+                    {/* SECURITY BOX */}
 
                     <div className="login-security">
 

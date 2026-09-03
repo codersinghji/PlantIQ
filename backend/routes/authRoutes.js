@@ -14,10 +14,16 @@ import {
     getSettings,
     updateSettings,
     resetSettings,
+
+    // SYSTEM ACCESS
     getAllUsers,
     updateUserRole,
-    deleteUser
+    deleteUser,
 
+    // APPROVAL
+    approveUser,
+    rejectUser,
+    getPendingUsers
 } from "../controllers/authController.js";
 
 import authMiddleware from "../middleware/authMiddleware.js";
@@ -26,9 +32,9 @@ import allowRoles from "../middleware/roleMiddleware.js";
 const router = express.Router();
 
 
-/* =========================================
+/* =========================================================
    AUTH
-========================================= */
+========================================================= */
 
 router.post(
     "/register",
@@ -61,9 +67,9 @@ router.post(
 );
 
 
-/* =========================================
+/* =========================================================
    PROFILE
-========================================= */
+========================================================= */
 
 router.get(
     "/profile",
@@ -84,9 +90,9 @@ router.put(
 );
 
 
-/* =========================================
+/* =========================================================
    SETTINGS
-========================================= */
+========================================================= */
 
 router.get(
     "/settings",
@@ -106,43 +112,77 @@ router.post(
     resetSettings
 );
 
-/* =========================================
+
+/* =========================================================
    SYSTEM ACCESS
    ADMIN ONLY
-========================================= */
+========================================================= */
 
-// View users
+// GET ALL USERS
 router.get(
     "/users",
     authMiddleware,
-    allowRoles("Admin", "operator"),
+    allowRoles("Admin"),
     getAllUsers
 );
 
-// Create user
+
+// CREATE USER
 router.post(
     "/users",
     authMiddleware,
-    allowRoles("Admin", "operator"),
+    allowRoles("Admin"),
     createUserByAdmin
 );
 
-// Only Admin can change roles
+
+// CHANGE USER ROLE
 router.put(
     "/users/:id/role",
     authMiddleware,
-    allowRoles("Admin", "operator"),
+    allowRoles("Admin"),
     updateUserRole
 );
 
-// Only Admin can delete users
+
+// DELETE USER
 router.delete(
     "/users/:id",
     authMiddleware,
-    allowRoles("Admin", "operator"),
+    allowRoles("Admin"),
     deleteUser
 );
 
+
+/* =========================================================
+   PENDING REGISTRATIONS
+========================================================= */
+
+// GET PENDING USERS
+router.get(
+    "/pending-users",
+    authMiddleware,
+    allowRoles("Admin"),
+    getPendingUsers
+);
+
+
+// APPROVE USER
+router.put(
+    "/users/:id/approve",
+    authMiddleware,
+    allowRoles("Admin"),
+    approveUser
+);
+
+
+// REJECT USER
+router.put(
+    "/users/:id/reject",
+    authMiddleware,
+    allowRoles("Admin"),
+    rejectUser
+);
 
 
 export default router;
